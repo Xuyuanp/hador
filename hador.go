@@ -42,15 +42,11 @@ func Default() *Hador {
 }
 
 func (h *Hador) Run(addr string) error {
+	h.Logger.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, h)
 }
 
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	rw := NewResponseWriter(w)
-	ctx := &Context{
-		Request:  req,
-		Response: rw,
-		Params:   make(Params),
-	}
+	ctx := NewContext(w, req, h.Logger)
 	h.FilterChain.ServeHTTP(ctx)
 }
