@@ -34,11 +34,11 @@ type dispatcher struct {
 	tree *tree
 }
 
-func (d dispatcher) ServeHTTP(ctx *Context) {
+func (d dispatcher) Serve(ctx *Context) {
 	t := d.tree
 	segments := genSegments(ctx.Request.URL.Path)
 	if len(segments) == t.depth {
-		t.prvFilterChain.ServeHTTP(ctx)
+		t.prvFilterChain.Serve(ctx)
 		return
 	}
 	segment := segments[t.depth]
@@ -54,7 +54,7 @@ func (d dispatcher) ServeHTTP(ctx *Context) {
 		}
 	}
 	if next != nil {
-		next.ServeHTTP(ctx)
+		next.Serve(ctx)
 		return
 	}
 	ctx.NotFound()
@@ -194,6 +194,6 @@ func (t *tree) MatchRegexp(segment string) (string, string, bool) {
 	return "", "", false
 }
 
-func (t *tree) ServeHTTP(ctx *Context) {
-	t.pubFilterChain.ServeHTTP(ctx)
+func (t *tree) Serve(ctx *Context) {
+	t.pubFilterChain.Serve(ctx)
 }

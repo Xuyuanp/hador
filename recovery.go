@@ -37,6 +37,6 @@ func NewRecoveryFilter(logger Logger) Filter {
 			}
 		}()
 
-		next.ServeHTTP(ctx)
+		next.Serve(ctx)
 	})
 }

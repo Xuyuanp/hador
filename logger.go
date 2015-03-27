@@ -39,7 +39,7 @@ func NewLogFilter(logger Logger) Filter {
 		}
 		logger.Info("Started %s %s %s", req.Method, path, addr)
 
-		next.ServeHTTP(ctx)
+		next.Serve(ctx)
 
 		rw := ctx.Response
 		status := rw.Status()

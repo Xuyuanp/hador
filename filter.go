@@ -57,9 +57,9 @@ func NewFilterChain(handler Handler, filters ...Filter) *FilterChain {
 	}
 }
 
-func (fc *FilterChain) ServeHTTP(ctx *Context) {
+func (fc *FilterChain) Serve(ctx *Context) {
 	if fc.handler != nil {
-		fc.handler.ServeHTTP(ctx)
+		fc.handler.Serve(ctx)
 	} else {
 		fc.filter.Filter(ctx, fc.next)
 	}

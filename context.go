@@ -35,18 +35,18 @@ type Context struct {
 
 func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Context {
 	return &Context{
-		Request:         req,
-		Response:        NewResponseWriter(w),
-		Params:          make(Params),
-		NotFoundHandler: http.NotFoundHandler(),
-		data:            make(map[string]interface{}),
-		Logger:          logger,
+		Request:  req,
+		Response: NewResponseWriter(w),
+		Params:   make(Params),
+		data:     make(map[string]interface{}),
+		Logger:   logger,
 	}
 }
 
 func (ctx *Context) NotFound() {
 	if ctx.NotFoundHandler == nil {
 		http.NotFound(ctx.Response, ctx.Request)
+		return
 	}
 	ctx.NotFoundHandler.ServeHTTP(ctx.Response, ctx.Request)
 }

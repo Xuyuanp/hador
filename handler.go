@@ -23,12 +23,12 @@ import (
 )
 
 type Handler interface {
-	ServeHTTP(*Context)
+	Serve(*Context)
 }
 
 type HandlerFunc func(ctx *Context)
 
-func (hf HandlerFunc) ServeHTTP(ctx *Context) {
+func (hf HandlerFunc) Serve(ctx *Context) {
 	hf(ctx)
 }
 
@@ -42,13 +42,13 @@ func NewMethodHandler() *MethodHandler {
 	}
 }
 
-func (h *MethodHandler) ServeHTTP(ctx *Context) {
+func (h *MethodHandler) Serve(ctx *Context) {
 	if h.IsEmpty() {
 		ctx.NotFound()
 	} else if handler, ok := h.handlers[ctx.Request.Method]; ok {
-		handler.ServeHTTP(ctx)
+		handler.Serve(ctx)
 	} else if handler, ok := h.handlers["ANY"]; ok {
-		handler.ServeHTTP(ctx)
+		handler.Serve(ctx)
 	} else {
 		h.MethodNotAllowed(ctx)
 	}
@@ -72,6 +72,5 @@ func (h *MethodHandler) MethodNotAllowed(ctx *Context) {
 		methods = append(methods, m)
 	}
 	ctx.Response.Header().Set("Allow", strings.Join(methods, ","))
-	ctx.Response.WriteHeader(http.StatusMethodNotAllowed)
-	ctx.Response.Write([]byte("405 Method Not Allowed"))
+	http.Error(ctx.Response, "405 Method Not Allowed", http.StatusMethodNotAllowed)
 }

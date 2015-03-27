@@ -48,5 +48,9 @@ func (h *Hador) Run(addr string) error {
 
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	ctx := NewContext(w, req, h.Logger)
-	h.FilterChain.ServeHTTP(ctx)
+	h.Serve(ctx)
+}
+
+func (h *Hador) Serve(ctx *Context) {
+	h.FilterChain.Serve(ctx)
 }
