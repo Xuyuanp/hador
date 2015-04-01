@@ -27,7 +27,7 @@ type Context struct {
 	Request         *http.Request
 	Response        ResponseWriter
 	Params          Params
-	NotFoundHandler http.Handler
+	NotFoundHandler Handler
 	data            map[string]interface{}
 	Logger          Logger
 	mutex           sync.RWMutex
@@ -48,7 +48,7 @@ func (ctx *Context) NotFound() {
 		http.NotFound(ctx.Response, ctx.Request)
 		return
 	}
-	ctx.NotFoundHandler.ServeHTTP(ctx.Response, ctx.Request)
+	ctx.NotFoundHandler.Serve(ctx)
 }
 
 func (ctx *Context) Set(key string, value interface{}) {
