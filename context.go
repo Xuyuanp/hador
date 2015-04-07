@@ -24,31 +24,41 @@ import (
 
 // Context struct
 type Context struct {
-	Request         *http.Request
-	Response        ResponseWriter
-	Params          Params
-	NotFoundHandler Handler
-	data            map[string]interface{}
-	Logger          Logger
-	mutex           sync.RWMutex
+	Request       *http.Request
+	Response      ResponseWriter
+	Params        Params
+	ErrorHandlers map[int]Handler
+	data          map[string]interface{}
+	Logger        Logger
+	mutex         sync.RWMutex
 }
 
 func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Context {
 	return &Context{
-		Request:  req,
-		Response: NewResponseWriter(w),
-		Params:   make(Params),
-		data:     make(map[string]interface{}),
-		Logger:   logger,
+		Request:       req,
+		Response:      NewResponseWriter(w),
+		Params:        make(Params),
+		ErrorHandlers: make(map[int]Handler),
+		data:          make(map[string]interface{}),
+		Logger:        logger,
 	}
 }
 
 func (ctx *Context) NotFound() {
-	if ctx.NotFoundHandler == nil {
-		http.NotFound(ctx.Response, ctx.Request)
+	if h, ok := ctx.ErrorHandlers[http.StatusNotFound]; ok {
+		h.Serve(ctx)
 		return
 	}
-	ctx.NotFoundHandler.Serve(ctx)
+	http.NotFound(ctx.Response, ctx.Request)
+}
+
+func (ctx *Context) MethodNotAllowed(allow string) {
+	ctx.Response.Header().Set("Allow", allow)
+	if h, ok := ctx.ErrorHandlers[http.StatusMethodNotAllowed]; ok {
+		h.Serve(ctx)
+		return
+	}
+	http.Error(ctx.Response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }
 
 func (ctx *Context) Set(key string, value interface{}) {

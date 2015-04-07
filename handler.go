@@ -17,10 +17,7 @@
 
 package hador
 
-import (
-	"net/http"
-	"strings"
-)
+import "strings"
 
 type Handler interface {
 	Serve(*Context)
@@ -71,6 +68,6 @@ func (h *MethodHandler) MethodNotAllowed(ctx *Context) {
 	for m := range h.handlers {
 		methods = append(methods, m)
 	}
-	ctx.Response.Header().Set("Allow", strings.Join(methods, ","))
-	http.Error(ctx.Response, "405 Method Not Allowed", http.StatusMethodNotAllowed)
+	allow := strings.Join(methods, ",")
+	ctx.MethodNotAllowed(allow)
 }
