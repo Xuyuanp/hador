@@ -49,8 +49,9 @@ func (d dispatcher) Serve(ctx *Context) {
 		for _, n := range t.regChildren {
 			if key, value, ok := n.MatchRegexp(segment); ok && key != "" {
 				ctx.Params[key] = value
+				next = n
+				break
 			}
-			next = n
 		}
 	}
 	if next != nil {
@@ -186,9 +187,6 @@ func (t *tree) MatchRegexp(segment string) (string, string, bool) {
 			value := result[1]
 			key := t.regexpSegment.SubexpNames()[1]
 			return key, value, true
-		}
-		if t.regexpSegment.MatchString(segment) {
-			return "", "", true
 		}
 	}
 	return "", "", false
