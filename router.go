@@ -17,6 +17,7 @@
 
 package hador
 
+// Router interface
 type Router interface {
 	Handler
 
@@ -36,6 +37,7 @@ type Router interface {
 	Group(string, func(Router)) Beforer
 }
 
+// NewRouter creates Router interface
 func NewRouter() Router {
 	return newTree("", 0)
 }

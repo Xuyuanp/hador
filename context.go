@@ -17,10 +17,7 @@
 
 package hador
 
-import (
-	"net/http"
-	"sync"
-)
+import "net/http"
 
 // Context struct
 type Context struct {
@@ -30,9 +27,9 @@ type Context struct {
 	ErrorHandlers map[int]Handler
 	data          map[string]interface{}
 	Logger        Logger
-	mutex         sync.RWMutex
 }
 
+// NewContext creates new Context instance
 func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Context {
 	return &Context{
 		Request:       req,
@@ -44,6 +41,7 @@ func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Contex
 	}
 }
 
+// NotFound handles 404 error
 func (ctx *Context) NotFound() {
 	if h, ok := ctx.ErrorHandlers[http.StatusNotFound]; ok {
 		h.Serve(ctx)
@@ -52,6 +50,7 @@ func (ctx *Context) NotFound() {
 	http.NotFound(ctx.Response, ctx.Request)
 }
 
+// MethodNotAllowed handles 405 error
 func (ctx *Context) MethodNotAllowed(allow string) {
 	ctx.Response.Header().Set("Allow", allow)
 	if h, ok := ctx.ErrorHandlers[http.StatusMethodNotAllowed]; ok {
@@ -61,33 +60,29 @@ func (ctx *Context) MethodNotAllowed(allow string) {
 	http.Error(ctx.Response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }
 
+// Set saves data in the context
 func (ctx *Context) Set(key string, value interface{}) {
-	ctx.mutex.Lock()
-	defer ctx.mutex.Unlock()
 	ctx.data[key] = value
 }
 
+// Get retrieves data from the context
 func (ctx *Context) Get(key string) interface{} {
-	ctx.mutex.RLock()
-	defer ctx.mutex.RUnlock()
 	if v, ok := ctx.data[key]; ok {
 		return v
 	}
 	return nil
 }
 
+// GetOK retrieves data from the context, and returns (nil, false) if no data
 func (ctx *Context) GetOK(key string) (value interface{}, ok bool) {
-	ctx.mutex.RLock()
-	defer ctx.mutex.RUnlock()
 	if v, ok := ctx.data[key]; ok {
 		return v, true
 	}
 	return nil, false
 }
 
+// Delete removes data from the context
 func (ctx *Context) Delete(key string) interface{} {
-	ctx.mutex.Lock()
-	defer ctx.mutex.Unlock()
 	if v, ok := ctx.data[key]; ok {
 		delete(ctx.data, key)
 		return v

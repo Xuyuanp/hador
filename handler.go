@@ -19,26 +19,32 @@ package hador
 
 import "strings"
 
+// Handler interface
 type Handler interface {
 	Serve(*Context)
 }
 
+// HandlerFunc is Handle as function
 type HandlerFunc func(ctx *Context)
 
+// Serve implements Handler interface by calling HandlerFunc function
 func (hf HandlerFunc) Serve(ctx *Context) {
 	hf(ctx)
 }
 
+// MethodHandler holds Handler by method
 type MethodHandler struct {
 	handlers map[string]Handler
 }
 
+// NewMethodHandler creates new MethodHandler instance
 func NewMethodHandler() *MethodHandler {
 	return &MethodHandler{
 		handlers: make(map[string]Handler),
 	}
 }
 
+// Serve implements Handler interface
 func (h *MethodHandler) Serve(ctx *Context) {
 	if h.IsEmpty() {
 		ctx.NotFound()
@@ -51,10 +57,12 @@ func (h *MethodHandler) Serve(ctx *Context) {
 	}
 }
 
+// IsEmpty returns true if there wes no handler binded with any method
 func (h *MethodHandler) IsEmpty() bool {
 	return len(h.handlers) == 0
 }
 
+// Handle binds handle with method
 func (h *MethodHandler) Handle(method string, handler Handler) bool {
 	if _, ok := h.handlers[method]; ok {
 		return false
@@ -63,6 +71,7 @@ func (h *MethodHandler) Handle(method string, handler Handler) bool {
 	return true
 }
 
+// MethodNotAllowed handles 405 error
 func (h *MethodHandler) MethodNotAllowed(ctx *Context) {
 	methods := []string{}
 	for m := range h.handlers {

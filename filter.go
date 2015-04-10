@@ -17,27 +17,33 @@
 
 package hador
 
+// Filter interface
 type Filter interface {
 	Filter(ctx *Context, next Handler)
 }
 
+// FilterFunc as function
 type FilterFunc func(*Context, Handler)
 
+// Filter implements Filter interface
 func (ff FilterFunc) Filter(ctx *Context, next Handler) {
 	ff(ctx, next)
 }
 
+// Beforer interface
 type Beforer interface {
 	Before(Filter) Beforer
 	BeforeFunc(func(*Context, Handler)) Beforer
 }
 
+// FilterChain struct
 type FilterChain struct {
 	handler Handler
 	filter  Filter
 	next    *FilterChain
 }
 
+// NewFilterChain creates new FilterChain instance
 func NewFilterChain(handler Handler, filters ...Filter) *FilterChain {
 	if handler == nil {
 		panic("handler shouldn't be nil")
@@ -57,6 +63,7 @@ func NewFilterChain(handler Handler, filters ...Filter) *FilterChain {
 	}
 }
 
+// Serve implements Handler interface
 func (fc *FilterChain) Serve(ctx *Context) {
 	if fc.handler != nil {
 		fc.handler.Serve(ctx)
@@ -65,6 +72,7 @@ func (fc *FilterChain) Serve(ctx *Context) {
 	}
 }
 
+// Before implements Beforer interface
 func (fc *FilterChain) Before(filter Filter) Beforer {
 	tmp := fc
 	for tmp.next != nil {
@@ -78,6 +86,7 @@ func (fc *FilterChain) Before(filter Filter) Beforer {
 	return fc
 }
 
+// BeforeFunc implements Beforer interface
 func (fc *FilterChain) BeforeFunc(f func(*Context, Handler)) Beforer {
 	return fc.Before(FilterFunc(f))
 }

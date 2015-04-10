@@ -19,12 +19,14 @@ package hador
 
 import "net/http"
 
+// Hador struct
 type Hador struct {
 	Router
 	*FilterChain
 	Logger Logger
 }
 
+// New creates new Hador instance
 func New() *Hador {
 	router := NewRouter()
 	return &Hador{
@@ -34,6 +36,7 @@ func New() *Hador {
 	}
 }
 
+// Default creates Hador instance with default filters(LogFilter, RecoveryFilter)
 func Default() *Hador {
 	h := New()
 	h.Before(NewLogFilter(h.Logger))
@@ -41,6 +44,7 @@ func Default() *Hador {
 	return h
 }
 
+// Run starts serving HTTP request
 func (h *Hador) Run(addr string) error {
 	h.Logger.Info("Listening on %s", addr)
 	return http.ListenAndServe(addr, h)
@@ -51,6 +55,7 @@ func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h.Serve(ctx)
 }
 
+// Serve implements Handler interface
 func (h *Hador) Serve(ctx *Context) {
 	h.FilterChain.Serve(ctx)
 }
