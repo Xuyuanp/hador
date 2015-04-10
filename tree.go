@@ -166,7 +166,7 @@ func (t *tree) add(segments []string, method string, handler Handler) (*tree, bo
 		}
 	} else {
 		found := false
-		for _, next := range t.regChildren {
+		for _, next = range t.regChildren {
 			if next.segment == segment {
 				found = true
 				break
