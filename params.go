@@ -35,6 +35,15 @@ func (params Params) GetString(key string) (string, error) {
 	return "", fmt.Errorf("No key named %s", key)
 }
 
+// GetStringMust method returns the param named `key` as string type.
+// If no param with the provided name, the default value will be returned.
+func (params Params) GetStringMust(key string, def string) string {
+	if value, ok := params[key]; ok {
+		return value
+	}
+	return def
+}
+
 // GetInt method does the same work as GetString, but converts the string into integer.
 // If the param is not a valid integer, an err will be returned.
 func (params Params) GetInt(key string) (int, error) {
@@ -42,4 +51,15 @@ func (params Params) GetInt(key string) (int, error) {
 		return strconv.Atoi(value)
 	}
 	return 0, fmt.Errorf("No key named %s", key)
+}
+
+// GetIntMust method does the same work as GetStringMust, but converts the string into integer.
+// If the param is not a valid integer, the default value will be returned.
+func (params Params) GetIntMust(key string, def int) int {
+	if value, ok := params[key]; ok {
+		if i, err := strconv.Atoi(value); err == nil {
+			return i
+		}
+	}
+	return def
 }
