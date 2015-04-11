@@ -36,7 +36,7 @@ type logger struct {
 }
 
 var defaultLogger = &logger{
-	Logger: log.New(os.Stdout, "[Hodor] ", 0),
+	Logger: log.New(os.Stdout, "[Hodor] ", log.LstdFlags|log.Lshortfile),
 }
 
 func (l *logger) Debug(format string, v ...interface{}) {
