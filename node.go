@@ -22,6 +22,15 @@ import (
 	"strings"
 )
 
+func genSegments(path string) []string {
+	if path == "/" {
+		path = ""
+	}
+	return strings.Split(path, "/")[1:]
+}
+
+var regSegmentRegexp = regexp.MustCompile(`\(\?P<.+>.+\)`)
+
 type leaf struct {
 	*FilterChain
 	h       *Hador
