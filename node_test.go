@@ -212,5 +212,30 @@ func TestNode(t *testing.T) {
 				convey.So(resp.Body.String(), convey.ShouldEqual, "Filter")
 			})
 		})
+		convey.Convey("Test error", func() {
+			n := newNode(h, "", 0)
+			n.Get("/a", newSimpleHandler("GET"))
+			convey.Convey("test GET /a", func() {
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/a", nil)
+				ctx := NewContext(resp, req, defaultLogger)
+				n.Serve(ctx)
+				convey.So(resp.Body.String(), convey.ShouldEqual, "GET")
+			})
+			convey.Convey("test POST /a", func() {
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("POST", "/a", nil)
+				ctx := NewContext(resp, req, defaultLogger)
+				n.Serve(ctx)
+				convey.So(resp.Code, convey.ShouldEqual, http.StatusMethodNotAllowed)
+			})
+			convey.Convey("test GET /b", func() {
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/b", nil)
+				ctx := NewContext(resp, req, defaultLogger)
+				n.Serve(ctx)
+				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
+			})
+		})
 	})
 }
