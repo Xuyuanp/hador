@@ -17,8 +17,6 @@
 
 package hador
 
-import "strings"
-
 // Handler interface
 type Handler interface {
 	Serve(*Context)
@@ -30,53 +28,4 @@ type HandlerFunc func(ctx *Context)
 // Serve implements Handler interface by calling HandlerFunc function
 func (hf HandlerFunc) Serve(ctx *Context) {
 	hf(ctx)
-}
-
-// MethodHandler holds Handler by method
-type MethodHandler struct {
-	handlers map[string]Handler
-}
-
-// NewMethodHandler creates new MethodHandler instance
-func NewMethodHandler() *MethodHandler {
-	return &MethodHandler{
-		handlers: make(map[string]Handler),
-	}
-}
-
-// Serve implements Handler interface
-func (h *MethodHandler) Serve(ctx *Context) {
-	if h.IsEmpty() {
-		ctx.NotFound()
-	} else if handler, ok := h.handlers[ctx.Request.Method]; ok {
-		handler.Serve(ctx)
-	} else if handler, ok := h.handlers["ANY"]; ok {
-		handler.Serve(ctx)
-	} else {
-		h.MethodNotAllowed(ctx)
-	}
-}
-
-// IsEmpty returns true if there wes no handler binded with any method
-func (h *MethodHandler) IsEmpty() bool {
-	return len(h.handlers) == 0
-}
-
-// Handle binds handle with method
-func (h *MethodHandler) Handle(method string, handler Handler) bool {
-	if _, ok := h.handlers[method]; ok {
-		return false
-	}
-	h.handlers[method] = handler
-	return true
-}
-
-// MethodNotAllowed handles 405 error
-func (h *MethodHandler) MethodNotAllowed(ctx *Context) {
-	methods := []string{}
-	for m := range h.handlers {
-		methods = append(methods, m)
-	}
-	allow := strings.Join(methods, ",")
-	ctx.MethodNotAllowed(allow)
 }
