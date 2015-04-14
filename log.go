@@ -41,25 +41,30 @@ var defaultLogger = &logger{
 
 func (l *logger) Debug(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
-	l.Printf("\033[34m%s\033[0m", msg)
+	msg = fmt.Sprintf("\033[34m%s\033[0m", msg)
+	l.Output(2, msg)
 }
 
 func (l *logger) Info(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
-	l.Printf("\033[32m%s\033[0m", msg)
+	msg = fmt.Sprintf("\033[32m%s\033[0m", msg)
+	l.Output(2, msg)
 }
 
 func (l *logger) Warning(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
-	l.Printf("\033[36m%s\033[0m", msg)
+	msg = fmt.Sprintf("\033[36m%s\033[0m", msg)
+	l.Output(2, msg)
 }
 
 func (l *logger) Error(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
-	l.Printf("\033[33m%s\033[0m", msg)
+	msg = fmt.Sprintf("\033[33m%s\033[0m", msg)
+	l.Output(2, msg)
 }
 
 func (l *logger) Critical(format string, v ...interface{}) {
 	msg := fmt.Sprintf(format, v...)
-	l.Printf("\033[31m%s\033[0m", msg)
+	msg = fmt.Sprintf("\033[31m%s\033[0m", msg)
+	l.Output(2, msg)
 }
