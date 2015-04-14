@@ -172,11 +172,8 @@ func (n *node) Group(pattern string, f func(Router)) Beforer {
 
 func (n *node) AddRoute(method, pattern string, handler Handler) Beforer {
 	segments := genSegments(pattern)
-	if b, l, ok := n.add(segments, method, handler); ok {
-		if l != nil {
-			return l
-		}
-		return b
+	if _, l, ok := n.add(segments, method, handler); ok {
+		return l
 	}
 	panic(fmt.Errorf("pattern: %s has been registered", pattern))
 }
