@@ -52,6 +52,10 @@ func (d *_dispatcher) Serve(ctx *Context) {
 			l.Serve(ctx)
 			return
 		}
+		if l, ok := n.leaves["ANY"]; ok {
+			l.Serve(ctx)
+			return
+		}
 		methods := make([]string, len(n.leaves))
 		i := 0
 		for m := range n.leaves {
