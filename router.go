@@ -38,6 +38,6 @@ type Router interface {
 }
 
 // NewRouter creates Router interface
-func NewRouter() Router {
-	return newTree("", 0)
+func NewRouter(h *Hador) Router {
+	return newNode(h, "", 0)
 }
