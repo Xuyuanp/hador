@@ -21,7 +21,7 @@ import "net/http"
 
 // Context struct
 type Context struct {
-	Request       *http.Request
+	Request       *Request
 	Response      ResponseWriter
 	Params        Params
 	ErrorHandlers map[int]Handler
@@ -32,7 +32,7 @@ type Context struct {
 // NewContext creates new Context instance
 func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Context {
 	return &Context{
-		Request:       req,
+		Request:       NewRequest(req),
 		Response:      NewResponseWriter(w),
 		Params:        make(Params),
 		ErrorHandlers: make(map[int]Handler),
@@ -47,7 +47,7 @@ func (ctx *Context) NotFound() {
 		h.Serve(ctx)
 		return
 	}
-	http.NotFound(ctx.Response, ctx.Request)
+	http.NotFound(ctx.Response, ctx.Request.Request)
 }
 
 // MethodNotAllowed handles 405 error

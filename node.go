@@ -55,16 +55,20 @@ type dispatcher struct {
 
 func (d *dispatcher) Serve(ctx *Context) {
 	n := d.node
-	segments := genSegments(ctx.Request.URL.Path)
+	segments := ctx.Request.segments
+	// path matches
 	if len(segments) == n.depth {
+		// method matches
 		if l, ok := n.leaves[ctx.Request.Method]; ok {
 			l.Serve(ctx)
 			return
 		}
+		// ANY matches
 		if l, ok := n.leaves["ANY"]; ok {
 			l.Serve(ctx)
 			return
 		}
+		// 405 method not allowed
 		methods := make([]string, len(n.leaves))
 		i := 0
 		for m := range n.leaves {
@@ -74,6 +78,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 		ctx.MethodNotAllowed(strings.Join(methods, ","))
 		return
 	}
+	// find next node
 	segment := segments[n.depth]
 	var next *node
 	if ne, ok := n.rawChildren[segment]; ok {
@@ -91,6 +96,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 		next.Serve(ctx)
 		return
 	}
+	// 404 not found
 	ctx.NotFound()
 }
 
