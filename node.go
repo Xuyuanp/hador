@@ -48,12 +48,12 @@ func newLeaf(h *Hador, method string, handler Handler) *leaf {
 	return l
 }
 
-type _dispatcher struct {
+type dispatcher struct {
 	h    *Hador
 	node *node
 }
 
-func (d *_dispatcher) Serve(ctx *Context) {
+func (d *dispatcher) Serve(ctx *Context) {
 	n := d.node
 	segments := genSegments(ctx.Request.URL.Path)
 	if len(segments) == n.depth {
@@ -119,7 +119,7 @@ func newNode(h *Hador, segment string, depth int) *node {
 		regChildren:   make([]*node, 0),
 		leaves:        make(map[string]*leaf),
 	}
-	n.FilterChain = NewFilterChain(&_dispatcher{h: n.h, node: n})
+	n.FilterChain = NewFilterChain(&dispatcher{h: n.h, node: n})
 	return n
 }
 
