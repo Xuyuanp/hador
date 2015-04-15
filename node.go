@@ -58,6 +58,11 @@ func (d *dispatcher) Serve(ctx *Context) {
 	segments := ctx.Request.segments
 	// path matches
 	if len(segments) == n.depth {
+		// 404 not found
+		if len(n.leaves) == 0 {
+			ctx.NotFound()
+			return
+		}
 		// method matches
 		if l, ok := n.leaves[ctx.Request.Method]; ok {
 			l.Serve(ctx)
