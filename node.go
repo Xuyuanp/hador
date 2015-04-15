@@ -34,16 +34,14 @@ var regSegmentRegexp = regexp.MustCompile(`\(\?P<.+>.+\)`)
 // Leaf struct
 type Leaf struct {
 	*FilterChain
-	h       *Hador
 	Parent  *Node
 	Handler Handler
 	Method  string
 }
 
 // NewLeaf creates new Leaf instance
-func NewLeaf(h *Hador, method string, handler Handler) *Leaf {
+func NewLeaf(method string, handler Handler) *Leaf {
 	l := &Leaf{
-		h:       h,
 		Method:  method,
 		Handler: handler,
 	}
@@ -52,7 +50,6 @@ func NewLeaf(h *Hador, method string, handler Handler) *Leaf {
 }
 
 type dispatcher struct {
-	h    *Hador
 	node *Node
 }
 
@@ -111,7 +108,6 @@ func (d *dispatcher) Serve(ctx *Context) {
 // Node struct
 type Node struct {
 	*FilterChain
-	h             *Hador
 	Parent        *Node
 	Depth         int
 	Segment       string
@@ -122,13 +118,12 @@ type Node struct {
 }
 
 // NewNode creates new Node instance.
-func NewNode(h *Hador, segment string, depth int) *Node {
+func NewNode(segment string, depth int) *Node {
 	var reg *regexp.Regexp
 	if segment != "" && regSegmentRegexp.MatchString(segment) {
 		reg = regexp.MustCompile(segment)
 	}
 	n := &Node{
-		h:             h,
 		Segment:       segment,
 		Depth:         depth,
 		regexpSegment: reg,
@@ -136,7 +131,7 @@ func NewNode(h *Hador, segment string, depth int) *Node {
 		regChildren:   make([]*Node, 0),
 		Leaves:        make(map[string]*Leaf),
 	}
-	n.FilterChain = NewFilterChain(&dispatcher{h: n.h, node: n})
+	n.FilterChain = NewFilterChain(&dispatcher{node: n})
 	return n
 }
 
@@ -213,7 +208,7 @@ func (n *Node) add(segments []string, method string, handler Handler) (*Node, *L
 			if _, ok := n.Leaves[method]; ok {
 				return n, nil, false
 			}
-			l := NewLeaf(n.h, method, handler)
+			l := NewLeaf(method, handler)
 			l.Parent = n
 			n.Leaves[method] = l
 			return n, l, true
@@ -226,7 +221,7 @@ func (n *Node) add(segments []string, method string, handler Handler) (*Node, *L
 		if ne, ok := n.rawChildren[segment]; ok {
 			next = ne
 		} else {
-			next = NewNode(n.h, segment, n.Depth+1)
+			next = NewNode(segment, n.Depth+1)
 			n.rawChildren[segment] = next
 		}
 	} else {
@@ -238,7 +233,7 @@ func (n *Node) add(segments []string, method string, handler Handler) (*Node, *L
 			}
 		}
 		if !found {
-			next = NewNode(n.h, segment, n.Depth+1)
+			next = NewNode(segment, n.Depth+1)
 			n.regChildren = append(n.regChildren, next)
 		}
 	}
