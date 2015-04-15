@@ -31,9 +31,6 @@ func NewRecoveryFilter(logger Logger) Filter {
 				stack := debug.Stack()
 				msg := fmt.Sprintf("PANIC: %s\n%s", err, stack)
 				logger.Critical(msg)
-				if ENV == DEVELOP {
-					fmt.Fprintf(ctx.Response, msg)
-				}
 			}
 		}()
 
