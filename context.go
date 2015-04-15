@@ -17,11 +17,14 @@
 
 package hador
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 // Context struct
 type Context struct {
-	Request       *http.Request
+	Request       *Request
 	Response      ResponseWriter
 	Params        Params
 	ErrorHandlers map[int]Handler
@@ -32,7 +35,7 @@ type Context struct {
 // NewContext creates new Context instance
 func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Context {
 	return &Context{
-		Request:       req,
+		Request:       NewRequest(req),
 		Response:      NewResponseWriter(w),
 		Params:        make(Params),
 		ErrorHandlers: make(map[int]Handler),
@@ -47,12 +50,12 @@ func (ctx *Context) NotFound() {
 		h.Serve(ctx)
 		return
 	}
-	http.NotFound(ctx.Response, ctx.Request)
+	http.NotFound(ctx.Response, ctx.Request.Request)
 }
 
 // MethodNotAllowed handles 405 error
-func (ctx *Context) MethodNotAllowed(allow string) {
-	ctx.Response.Header().Set("Allow", allow)
+func (ctx *Context) MethodNotAllowed(allow []string) {
+	ctx.Response.Header().Set("Allow", strings.Join(allow, ","))
 	if h, ok := ctx.ErrorHandlers[http.StatusMethodNotAllowed]; ok {
 		h.Serve(ctx)
 		return
