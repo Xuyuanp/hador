@@ -17,7 +17,10 @@
 
 package hador
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 // Context struct
 type Context struct {
@@ -51,8 +54,8 @@ func (ctx *Context) NotFound() {
 }
 
 // MethodNotAllowed handles 405 error
-func (ctx *Context) MethodNotAllowed(allow string) {
-	ctx.Response.Header().Set("Allow", allow)
+func (ctx *Context) MethodNotAllowed(allow []string) {
+	ctx.Response.Header().Set("Allow", strings.Join(allow, ","))
 	if h, ok := ctx.ErrorHandlers[http.StatusMethodNotAllowed]; ok {
 		h.Serve(ctx)
 		return

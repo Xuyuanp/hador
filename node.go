@@ -75,7 +75,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 			methods[i] = m
 			i++
 		}
-		ctx.MethodNotAllowed(strings.Join(methods, ","))
+		ctx.MethodNotAllowed(methods)
 		return
 	}
 	// find next node
