@@ -31,52 +31,55 @@ func genSegments(path string) []string {
 
 var regSegmentRegexp = regexp.MustCompile(`\(\?P<.+>.+\)`)
 
-type leaf struct {
+// Leaf struct
+type Leaf struct {
 	*FilterChain
 	h       *Hador
-	handler Handler
-	method  string
+	Parent  *Node
+	Handler Handler
+	Method  string
 }
 
-func newLeaf(h *Hador, method string, handler Handler) *leaf {
-	l := &leaf{
+// NewLeaf creates new Leaf instance
+func NewLeaf(h *Hador, method string, handler Handler) *Leaf {
+	l := &Leaf{
 		h:       h,
-		method:  method,
-		handler: handler,
+		Method:  method,
+		Handler: handler,
 	}
-	l.FilterChain = NewFilterChain(l.handler)
+	l.FilterChain = NewFilterChain(l.Handler)
 	return l
 }
 
 type dispatcher struct {
 	h    *Hador
-	node *node
+	node *Node
 }
 
 func (d *dispatcher) Serve(ctx *Context) {
 	n := d.node
 	segments := ctx.Request.segments
 	// path matches
-	if len(segments) == n.depth {
+	if len(segments) == n.Depth {
 		// 404 not found
-		if len(n.leaves) == 0 {
+		if len(n.Leaves) == 0 {
 			ctx.NotFound()
 			return
 		}
 		// method matches
-		if l, ok := n.leaves[ctx.Request.Method]; ok {
+		if l, ok := n.Leaves[ctx.Request.Method]; ok {
 			l.Serve(ctx)
 			return
 		}
 		// ANY matches
-		if l, ok := n.leaves["ANY"]; ok {
+		if l, ok := n.Leaves["ANY"]; ok {
 			l.Serve(ctx)
 			return
 		}
 		// 405 method not allowed
-		methods := make([]string, len(n.leaves))
+		methods := make([]string, len(n.Leaves))
 		i := 0
-		for m := range n.leaves {
+		for m := range n.Leaves {
 			methods[i] = m
 			i++
 		}
@@ -84,8 +87,8 @@ func (d *dispatcher) Serve(ctx *Context) {
 		return
 	}
 	// find next node
-	segment := segments[n.depth]
-	var next *node
+	segment := segments[n.Depth]
+	var next *Node
 	if ne, ok := n.rawChildren[segment]; ok {
 		next = ne
 	} else {
@@ -105,83 +108,98 @@ func (d *dispatcher) Serve(ctx *Context) {
 	ctx.NotFound()
 }
 
-type node struct {
+// Node struct
+type Node struct {
 	*FilterChain
 	h             *Hador
-	depth         int
-	segment       string
+	Parent        *Node
+	Depth         int
+	Segment       string
 	regexpSegment *regexp.Regexp
-	rawChildren   map[string]*node
-	regChildren   []*node
-	leaves        map[string]*leaf
+	rawChildren   map[string]*Node
+	regChildren   []*Node
+	Leaves        map[string]*Leaf
 }
 
-func newNode(h *Hador, segment string, depth int) *node {
+// NewNode creates new Node instance.
+func NewNode(h *Hador, segment string, depth int) *Node {
 	var reg *regexp.Regexp
 	if segment != "" && regSegmentRegexp.MatchString(segment) {
 		reg = regexp.MustCompile(segment)
 	}
-	n := &node{
+	n := &Node{
 		h:             h,
-		segment:       segment,
-		depth:         depth,
+		Segment:       segment,
+		Depth:         depth,
 		regexpSegment: reg,
-		rawChildren:   make(map[string]*node),
-		regChildren:   make([]*node, 0),
-		leaves:        make(map[string]*leaf),
+		rawChildren:   make(map[string]*Node),
+		regChildren:   make([]*Node, 0),
+		Leaves:        make(map[string]*Leaf),
 	}
 	n.FilterChain = NewFilterChain(&dispatcher{h: n.h, node: n})
 	return n
 }
 
-func (n *node) Options(pattern string, handler Handler) Beforer {
+// Options adds route by call AddRoute
+func (n *Node) Options(pattern string, handler Handler) Beforer {
 	return n.AddRoute("OPTIONS", pattern, handler)
 }
 
-func (n *node) Get(pattern string, handler Handler) Beforer {
+// Get adds route by call AddRoute
+func (n *Node) Get(pattern string, handler Handler) Beforer {
 	return n.AddRoute("GET", pattern, handler)
 }
 
-func (n *node) Head(pattern string, handler Handler) Beforer {
+// Head adds route by call AddRoute
+func (n *Node) Head(pattern string, handler Handler) Beforer {
 	return n.AddRoute("HEAD", pattern, handler)
 }
 
-func (n *node) Post(pattern string, handler Handler) Beforer {
+// Post adds route by call AddRoute
+func (n *Node) Post(pattern string, handler Handler) Beforer {
 	return n.AddRoute("POST", pattern, handler)
 }
 
-func (n *node) Put(pattern string, handler Handler) Beforer {
+// Put adds route by call AddRoute
+func (n *Node) Put(pattern string, handler Handler) Beforer {
 	return n.AddRoute("PUT", pattern, handler)
 }
 
-func (n *node) Delete(pattern string, handler Handler) Beforer {
+// Delete adds route by call AddRoute
+func (n *Node) Delete(pattern string, handler Handler) Beforer {
 	return n.AddRoute("DELETE", pattern, handler)
 }
 
-func (n *node) Trace(pattern string, handler Handler) Beforer {
+// Trace adds route by call AddRoute
+func (n *Node) Trace(pattern string, handler Handler) Beforer {
 	return n.AddRoute("TRACE", pattern, handler)
 }
 
-func (n *node) Connect(pattern string, handler Handler) Beforer {
+// Connect adds route by call AddRoute
+func (n *Node) Connect(pattern string, handler Handler) Beforer {
 	return n.AddRoute("CONNECT", pattern, handler)
 }
 
-func (n *node) Patch(pattern string, handler Handler) Beforer {
+// Patch adds route by call AddRoute
+func (n *Node) Patch(pattern string, handler Handler) Beforer {
 	return n.AddRoute("PATCH", pattern, handler)
 }
 
-func (n *node) Any(pattern string, handler Handler) Beforer {
+// Any adds route by call AddRoute
+func (n *Node) Any(pattern string, handler Handler) Beforer {
 	return n.AddRoute("ANY", pattern, handler)
 }
 
-func (n *node) Group(pattern string, f func(Router)) Beforer {
+// Group adds group routes
+func (n *Node) Group(pattern string, f func(Router)) Beforer {
 	segments := genSegments(pattern)
 	r, _, _ := n.add(segments, "", nil)
 	f(r)
 	return r
 }
 
-func (n *node) AddRoute(method, pattern string, handler Handler) Beforer {
+// AddRoute adds a new route with method, pattern and handler
+func (n *Node) AddRoute(method, pattern string, handler Handler) Beforer {
 	segments := genSegments(pattern)
 	if _, l, ok := n.add(segments, method, handler); ok {
 		return l
@@ -189,44 +207,47 @@ func (n *node) AddRoute(method, pattern string, handler Handler) Beforer {
 	panic(fmt.Errorf("pattern: %s has been registered", pattern))
 }
 
-func (n *node) add(segments []string, method string, handler Handler) (*node, *leaf, bool) {
+func (n *Node) add(segments []string, method string, handler Handler) (*Node, *Leaf, bool) {
 	if len(segments) == 0 {
 		if method != "" && handler != nil {
-			if _, ok := n.leaves[method]; ok {
+			if _, ok := n.Leaves[method]; ok {
 				return n, nil, false
 			}
-			l := newLeaf(n.h, method, handler)
-			n.leaves[method] = l
+			l := NewLeaf(n.h, method, handler)
+			l.Parent = n
+			n.Leaves[method] = l
 			return n, l, true
 		}
 		return n, nil, true
 	}
 	segment := segments[0]
-	var next *node
+	var next *Node
 	if !regSegmentRegexp.MatchString(segment) {
 		if ne, ok := n.rawChildren[segment]; ok {
 			next = ne
 		} else {
-			next = newNode(n.h, segment, n.depth+1)
+			next = NewNode(n.h, segment, n.Depth+1)
 			n.rawChildren[segment] = next
 		}
 	} else {
 		found := false
 		for _, next = range n.regChildren {
-			if next.segment == segment {
+			if next.Segment == segment {
 				found = true
 				break
 			}
 		}
 		if !found {
-			next = newNode(n.h, segment, n.depth+1)
+			next = NewNode(n.h, segment, n.Depth+1)
 			n.regChildren = append(n.regChildren, next)
 		}
 	}
+	next.Parent = n
 	return next.add(segments[1:], method, handler)
 }
 
-func (n *node) MatchRegexp(segment string) (string, string, bool) {
+// MatchRegexp checks if the segment match regexp in node
+func (n *Node) MatchRegexp(segment string) (string, string, bool) {
 	if n.regexpSegment != nil {
 		result := n.regexpSegment.FindStringSubmatch(segment)
 		if len(result) > 1 && result[0] == segment {

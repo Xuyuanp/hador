@@ -39,5 +39,5 @@ type Router interface {
 
 // NewRouter creates Router interface
 func NewRouter(h *Hador) Router {
-	return newNode(h, "", 0)
+	return NewNode(h, "", 0)
 }
