@@ -50,6 +50,7 @@ func NewLeaf(method string, handler Handler) *Leaf {
 	return l
 }
 
+// Path returns the full path from root to the parent node
 func (l *Leaf) Path() string {
 	return l.path
 }
@@ -260,7 +261,7 @@ func (n *Node) MatchRegexp(segment string) (string, string, bool) {
 	return "", "", false
 }
 
-// Path return the full path from root to the node
+// Path returns the full path from root to the node
 func (n *Node) Path() string {
 	if n.Parent == nil {
 		return "/"
