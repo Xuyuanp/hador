@@ -35,6 +35,7 @@ var regSegmentRegexp = regexp.MustCompile(`\(\?P<.+>.+\)`)
 type Leaf struct {
 	*FilterChain
 	Parent  *Node
+	path    string
 	Handler Handler
 	Method  string
 }
@@ -47,6 +48,10 @@ func NewLeaf(method string, handler Handler) *Leaf {
 	}
 	l.FilterChain = NewFilterChain(l.Handler)
 	return l
+}
+
+func (l *Leaf) Path() string {
+	return l.path
 }
 
 type dispatcher struct {
@@ -210,6 +215,7 @@ func (n *Node) add(segments []string, method string, handler Handler) (*Node, *L
 			}
 			l := NewLeaf(method, handler)
 			l.Parent = n
+			l.path = n.Path()
 			n.Leaves[method] = l
 			return n, l, true
 		}
@@ -252,4 +258,16 @@ func (n *Node) MatchRegexp(segment string) (string, string, bool) {
 		}
 	}
 	return "", "", false
+}
+
+// Path return the full path from root to the node
+func (n *Node) Path() string {
+	if n.Parent == nil {
+		return "/"
+	}
+	ppath := n.Parent.Path()
+	if ppath == "/" {
+		ppath = ""
+	}
+	return ppath + "/" + n.Segment
 }

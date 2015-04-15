@@ -235,5 +235,14 @@ func TestNode(t *testing.T) {
 				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
 			})
 		})
+		convey.Convey("Test Path", func() {
+			n := NewNode("", 0)
+			l := n.Get("/", newSimpleHandler("GET")).(*Leaf)
+			l1 := n.Get("/a/b/c/d", newSimpleHandler("GET")).(*Leaf)
+			l2 := n.Get("/a/(?P<name>.+)", newSimpleHandler("GET")).(*Leaf)
+			convey.So(l.Path(), convey.ShouldEqual, "/")
+			convey.So(l1.Path(), convey.ShouldEqual, "/a/b/c/d")
+			convey.So(l2.Path(), convey.ShouldEqual, "/a/(?P<name>.+)")
+		})
 	})
 }
