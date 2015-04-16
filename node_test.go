@@ -149,8 +149,8 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test regexp path", func() {
 			n := NewNode("", 0)
-			n.Get(`/(?P<name>\w+)`, newSimpleHandler("h1"))
-			n.Get(`/(?P<name>\w+)/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
+			n.Get(`/{name:\w+}`, newSimpleHandler("h1"))
+			n.Get(`/{name:\w+}/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
 			convey.Convey("/jack", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/jack", nil)
