@@ -166,12 +166,12 @@ func TestNode(t *testing.T) {
 				convey.So(resp.Body.String(), convey.ShouldEqual, "h2")
 			})
 		})
-		convey.Convey("Test Before", func() {
+		convey.Convey("Test Filter", func() {
 			n := NewNode("", 0)
 			n.Get("/a", newSimpleHandler("h1"))
-			n.Get("/a/b", newSimpleHandler("h2")).BeforeFunc(func(ctx *Context, next Handler) {
+			n.Get("/a/b", newSimpleHandler("h2"), FilterFunc(func(ctx *Context, next Handler) {
 				ctx.Response.Write([]byte("Filter"))
-			})
+			}))
 			convey.Convey("test /a", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/a", nil)
@@ -187,14 +187,14 @@ func TestNode(t *testing.T) {
 				convey.So(resp.Body.String(), convey.ShouldEqual, "Filter")
 			})
 		})
-		convey.Convey("Test Before with Group", func() {
+		convey.Convey("Test FilteFilter with Group", func() {
 			n := NewNode("", 0)
 			n.Group("/a", func(r Router) {
 				r.Get("/b", newSimpleHandler("h1"))
 				r.Get("/c", newSimpleHandler("h2"))
-			}).BeforeFunc(func(ctx *Context, next Handler) {
+			}, FilterFunc(func(ctx *Context, next Handler) {
 				ctx.Response.Write([]byte("Filter"))
-			})
+			}))
 			convey.Convey("test /a/b", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/a/b", nil)
@@ -237,9 +237,9 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test Path", func() {
 			n := NewNode("", 0)
-			l := n.Get("/", newSimpleHandler("GET")).(*Leaf)
-			l1 := n.Get("/a/b/c/d", newSimpleHandler("GET")).(*Leaf)
-			l2 := n.Get("/a/(?P<name>.+)", newSimpleHandler("GET")).(*Leaf)
+			l := n.Get("/", newSimpleHandler("GET"))
+			l1 := n.Get("/a/b/c/d", newSimpleHandler("GET"))
+			l2 := n.Get("/a/(?P<name>.+)", newSimpleHandler("GET"))
 			convey.So(l.Path(), convey.ShouldEqual, "/")
 			convey.So(l1.Path(), convey.ShouldEqual, "/a/b/c/d")
 			convey.So(l2.Path(), convey.ShouldEqual, "/a/(?P<name>.+)")

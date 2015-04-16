@@ -36,23 +36,39 @@ type Leaf struct {
 	*FilterChain
 	Parent  *Node
 	path    string
-	Handler Handler
-	Method  string
+	handler Handler
+	method  string
 }
 
 // NewLeaf creates new Leaf instance
 func NewLeaf(method string, handler Handler) *Leaf {
 	l := &Leaf{
-		Method:  method,
-		Handler: handler,
+		method:  method,
+		handler: handler,
 	}
-	l.FilterChain = NewFilterChain(l.Handler)
+	l.FilterChain = NewFilterChain(l.handler)
 	return l
 }
 
 // Path returns the full path from root to the parent node
 func (l *Leaf) Path() string {
 	return l.path
+}
+
+// Method returns method of Leaf
+func (l *Leaf) Method() string {
+	return l.method
+}
+
+// Handler returns handler of Leaf
+func (l *Leaf) Handler() Handler {
+	return l.handler
+}
+
+// AddFilters add filters into FilterChain
+func (l *Leaf) AddFilters(filters ...Filter) *Leaf {
+	l.FilterChain.AddFilters(filters...)
+	return l
 }
 
 type dispatcher struct {
@@ -142,73 +158,72 @@ func NewNode(segment string, depth int) *Node {
 }
 
 // Options adds route by call AddRoute
-func (n *Node) Options(pattern string, handler Handler) Beforer {
-	return n.AddRoute("OPTIONS", pattern, handler)
+func (n *Node) Options(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("OPTIONS", pattern, handler, filters...)
 }
 
 // Get adds route by call AddRoute
-func (n *Node) Get(pattern string, handler Handler) Beforer {
-	return n.AddRoute("GET", pattern, handler)
+func (n *Node) Get(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("GET", pattern, handler, filters...)
 }
 
 // Head adds route by call AddRoute
-func (n *Node) Head(pattern string, handler Handler) Beforer {
-	return n.AddRoute("HEAD", pattern, handler)
+func (n *Node) Head(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("HEAD", pattern, handler, filters...)
 }
 
 // Post adds route by call AddRoute
-func (n *Node) Post(pattern string, handler Handler) Beforer {
-	return n.AddRoute("POST", pattern, handler)
+func (n *Node) Post(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("POST", pattern, handler, filters...)
 }
 
 // Put adds route by call AddRoute
-func (n *Node) Put(pattern string, handler Handler) Beforer {
-	return n.AddRoute("PUT", pattern, handler)
+func (n *Node) Put(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("PUT", pattern, handler, filters...)
 }
 
 // Delete adds route by call AddRoute
-func (n *Node) Delete(pattern string, handler Handler) Beforer {
-	return n.AddRoute("DELETE", pattern, handler)
+func (n *Node) Delete(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("DELETE", pattern, handler, filters...)
 }
 
 // Trace adds route by call AddRoute
-func (n *Node) Trace(pattern string, handler Handler) Beforer {
-	return n.AddRoute("TRACE", pattern, handler)
+func (n *Node) Trace(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("TRACE", pattern, handler, filters...)
 }
 
 // Connect adds route by call AddRoute
-func (n *Node) Connect(pattern string, handler Handler) Beforer {
-	return n.AddRoute("CONNECT", pattern, handler)
+func (n *Node) Connect(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("CONNECT", pattern, handler, filters...)
 }
 
 // Patch adds route by call AddRoute
-func (n *Node) Patch(pattern string, handler Handler) Beforer {
-	return n.AddRoute("PATCH", pattern, handler)
+func (n *Node) Patch(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("PATCH", pattern, handler, filters...)
 }
 
 // Any adds route by call AddRoute
-func (n *Node) Any(pattern string, handler Handler) Beforer {
-	return n.AddRoute("ANY", pattern, handler)
+func (n *Node) Any(pattern string, handler Handler, filters ...Filter) *Leaf {
+	return n.AddRoute("ANY", pattern, handler, filters...)
 }
 
 // Group adds group routes
-func (n *Node) Group(pattern string, f func(Router)) Beforer {
+func (n *Node) Group(pattern string, f func(Router), filters ...Filter) {
 	segments := genSegments(pattern)
-	r, _, _ := n.add(segments, "", nil)
+	r, _, _ := n.add(segments, "", nil, filters...)
 	f(r)
-	return r
 }
 
 // AddRoute adds a new route with method, pattern and handler
-func (n *Node) AddRoute(method, pattern string, handler Handler) Beforer {
+func (n *Node) AddRoute(method, pattern string, handler Handler, filters ...Filter) *Leaf {
 	segments := genSegments(pattern)
-	if _, l, ok := n.add(segments, method, handler); ok {
+	if _, l, ok := n.add(segments, method, handler, filters...); ok {
 		return l
 	}
 	panic(fmt.Errorf("pattern: %s has been registered", pattern))
 }
 
-func (n *Node) add(segments []string, method string, handler Handler) (*Node, *Leaf, bool) {
+func (n *Node) add(segments []string, method string, handler Handler, filters ...Filter) (*Node, *Leaf, bool) {
 	if len(segments) == 0 {
 		if method != "" && handler != nil {
 			if _, ok := n.Leaves[method]; ok {
@@ -218,8 +233,10 @@ func (n *Node) add(segments []string, method string, handler Handler) (*Node, *L
 			l.Parent = n
 			l.path = n.Path()
 			n.Leaves[method] = l
+			l.AddFilters(filters...)
 			return n, l, true
 		}
+		n.AddFilters(filters...)
 		return n, nil, true
 	}
 	segment := segments[0]
@@ -245,7 +262,7 @@ func (n *Node) add(segments []string, method string, handler Handler) (*Node, *L
 		}
 	}
 	next.Parent = n
-	return next.add(segments[1:], method, handler)
+	return next.add(segments[1:], method, handler, filters...)
 }
 
 // MatchRegexp checks if the segment match regexp in node
