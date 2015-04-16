@@ -29,6 +29,16 @@ func genSegments(path string) []string {
 	return strings.Split(path, "/")[1:]
 }
 
+func isReg(segment string) bool {
+	if regSegmentRegexp.MatchString(segment) {
+		return true
+	}
+	if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
+		return true
+	}
+	return false
+}
+
 var regSegmentRegexp = regexp.MustCompile(`\(\?P<.+>.+\)`)
 
 type dispatcher struct {
@@ -90,28 +100,42 @@ func (d *dispatcher) Serve(ctx *Context) {
 // Node struct
 type Node struct {
 	*FilterChain
-	Parent        *Node
-	Depth         int
-	Segment       string
-	regexpSegment *regexp.Regexp
-	rawChildren   map[string]*Node
-	regChildren   []*Node
-	Leaves        map[string]*Leaf
+	Parent      *Node
+	Depth       int
+	Segment     string
+	paramName   string
+	paramReg    *regexp.Regexp
+	rawChildren map[string]*Node
+	regChildren []*Node
+	Leaves      map[string]*Leaf
 }
 
 // NewNode creates new Node instance.
 func NewNode(segment string, depth int) *Node {
-	var reg *regexp.Regexp
-	if segment != "" && regSegmentRegexp.MatchString(segment) {
-		reg = regexp.MustCompile(segment)
+	var paramName string
+	var paramReg *regexp.Regexp
+	if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
+		seg := segment[1 : len(segment)-1]
+		splits := strings.SplitN(seg, ":", 2)
+		if len(splits) == 1 {
+			splits = append(splits, ".+")
+		}
+		paramName = splits[0]
+		paramReg = regexp.MustCompile(splits[1])
+	} else if regSegmentRegexp.MatchString(segment) {
+		seg := segment[4 : len(segment)-1]
+		splits := strings.SplitN(seg, ">", 2)
+		paramName = splits[0]
+		paramReg = regexp.MustCompile(splits[1])
 	}
 	n := &Node{
-		Segment:       segment,
-		Depth:         depth,
-		regexpSegment: reg,
-		rawChildren:   make(map[string]*Node),
-		regChildren:   make([]*Node, 0),
-		Leaves:        make(map[string]*Leaf),
+		Segment:     segment,
+		Depth:       depth,
+		paramName:   paramName,
+		paramReg:    paramReg,
+		rawChildren: make(map[string]*Node),
+		regChildren: make([]*Node, 0),
+		Leaves:      make(map[string]*Leaf),
 	}
 	n.FilterChain = NewFilterChain(&dispatcher{node: n})
 	return n
@@ -201,7 +225,7 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 	}
 	segment := segments[0]
 	var next *Node
-	if !regSegmentRegexp.MatchString(segment) {
+	if !isReg(segment) {
 		if ne, ok := n.rawChildren[segment]; ok {
 			next = ne
 		} else {
@@ -227,13 +251,8 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 
 // MatchRegexp checks if the segment match regexp in node
 func (n *Node) MatchRegexp(segment string) (string, string, bool) {
-	if n.regexpSegment != nil {
-		result := n.regexpSegment.FindStringSubmatch(segment)
-		if len(result) > 1 && result[0] == segment {
-			value := result[1]
-			key := n.regexpSegment.SubexpNames()[1]
-			return key, value, true
-		}
+	if n.paramReg != nil && n.paramReg.MatchString(segment) {
+		return n.paramName, segment, true
 	}
 	return "", "", false
 }
