@@ -82,8 +82,8 @@ func (d *dispatcher) Serve(ctx *Context) {
 		next = ne
 	} else {
 		for _, ne := range n.regChildren {
-			if key, value, ok := ne.MatchRegexp(segment); ok && key != "" {
-				ctx.Params[key] = value
+			if ne.MatchRegexp(segment) {
+				ctx.Params[ne.paramName] = segment
 				next = ne
 				break
 			}
@@ -250,11 +250,11 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 }
 
 // MatchRegexp checks if the segment match regexp in node
-func (n *Node) MatchRegexp(segment string) (string, string, bool) {
+func (n *Node) MatchRegexp(segment string) bool {
 	if n.paramReg != nil && n.paramReg.MatchString(segment) {
-		return n.paramName, segment, true
+		return true
 	}
-	return "", "", false
+	return false
 }
 
 // Path returns the full path from root to the node
