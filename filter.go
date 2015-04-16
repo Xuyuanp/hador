@@ -90,3 +90,10 @@ func (fc *FilterChain) Before(filter Filter) Beforer {
 func (fc *FilterChain) BeforeFunc(f func(*Context, Handler)) Beforer {
 	return fc.Before(FilterFunc(f))
 }
+
+// AddFilters adds all filters to chain
+func (fc *FilterChain) AddFilters(filters ...Filter) {
+	for _, filter := range filters {
+		fc.Before(filter)
+	}
+}
