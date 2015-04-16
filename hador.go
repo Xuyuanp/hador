@@ -24,14 +24,16 @@ type Hador struct {
 	Router
 	*FilterChain
 	Logger Logger
+	root   *Node
 }
 
 // New creates new Hador instance
 func New() *Hador {
 	h := &Hador{
 		Logger: defaultLogger,
+		root:   NewNode("", 0),
 	}
-	h.Router = NewRouter(h)
+	h.Router = h.root
 	h.FilterChain = NewFilterChain(h.Router)
 	return h
 }
