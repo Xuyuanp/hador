@@ -190,7 +190,7 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 				return n, nil, false
 			}
 			l := NewLeaf(method, handler)
-			l.Parent = n
+			l.parent = n
 			l.path = n.Path()
 			n.Leaves[method] = l
 			l.AddFilters(filters...)

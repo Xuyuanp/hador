@@ -20,7 +20,7 @@ package hador
 // Leaf struct
 type Leaf struct {
 	*FilterChain
-	Parent  *Node
+	parent  *Node
 	path    string
 	handler Handler
 	method  string
@@ -49,6 +49,11 @@ func (l *Leaf) Method() string {
 // Handler returns handler of Leaf
 func (l *Leaf) Handler() Handler {
 	return l.handler
+}
+
+// Parent returns parent node of leaf
+func (l *Leaf) Parent() *Node {
+	return l.parent
 }
 
 // AddFilters add filters into FilterChain
