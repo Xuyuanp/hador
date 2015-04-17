@@ -17,6 +17,22 @@
 
 package swagger
 
+type Security map[string][]string
+
+type Scopes map[string]string
+
+type Paths map[string]Path
+
+type Path map[string]Operation
+
+type Responses map[string]Response
+
+type Headers map[string]Header
+
+type Example map[string]interface{}
+
+type SecurityDefinitons map[string]SecurityDefiniton
+
 type Contact struct {
 	Name  string `json:"name,omitempty"`
 	URL   string `json:"url,omitempty"`
@@ -37,17 +53,12 @@ type Info struct {
 	License        *License `json:"license,omitempty"`
 }
 
-type Paths map[string]Path
-
-type Path map[string]Operation
-
-type Responses map[string]Response
-
 type Reference struct {
-	Ref string `json:"$ref"`
+	Ref string `json:"$ref,omitempty"`
 }
 
 type Items struct {
+	Items            *Items        `json:"items,omitempty"`
 	Type             string        `json:"type"`
 	Format           string        `json:"format,omitempty"`
 	CollectionFormat string        `json:"collectionFormat,omitempty"`
@@ -56,21 +67,17 @@ type Items struct {
 	ExclusiveMaximum bool          `json:"exclusiveMaximum,omitempty"`
 	Minimum          int           `json:"minimum,omitempty"`
 	ExclusiveMinimum bool          `json:"exclusiveMinimum,omitempty"`
-	MaxLength        int           `json:maxLength,omitempty`
-	MinLength        int           `json:minLength,omitempty`
+	MaxLength        int           `json:"maxLength,omitempty"`
+	MinLength        int           `json:"minLength,omitempty"`
 	UniqueItems      bool          `json:"uniqueItems,omitempty"`
 	Enum             []interface{} `json:"enum,omitempty"`
 	MultipleOf       int           `json:"multipleOf,omitempty"`
 }
 
-type Headers map[string]Header
-
 type Header struct {
 	Items
 	Description string `json:"description,omitempty"`
 }
-
-type Example map[string]interface{}
 
 type XML struct {
 	Name      string `json:"name,omitempty"`
@@ -81,21 +88,23 @@ type XML struct {
 }
 
 type Schema struct {
-	Discriminator string       `json:"discriminator,omitempty"`
-	ReadOnly      bool         `json:"readOnly"`
-	XML           XML          `json:"xml,omitempty"`
-	ExternalDocs  ExternalDocs `json:"externalDocs,omitempty"`
-	Example       interface{}  `json:"example,omitempty"`
+	Items
+	Discriminator string        `json:"discriminator,omitempty"`
+	ReadOnly      bool          `json:"readOnly,omitempty"`
+	XML           *XML          `json:"xml,omitempty"`
+	ExternalDocs  *ExternalDocs `json:"externalDocs,omitempty"`
+	Example       interface{}   `json:"example,omitempty"`
 }
 
 type Response struct {
 	Description string   `json:"description"`
 	Schema      *Schema  `json:"schema,omitempty"`
 	Headers     *Headers `json:"headers,omitempty"`
-	Example     Example  `json:"example"`
+	Example     Example  `json:"example,omitempty"`
 }
 
 type Parameter struct {
+	Items
 	Name        string `json:"name,omitempty"`
 	In          string `json:"in"`
 	Description string `json:"description,omitempty"`
@@ -103,6 +112,7 @@ type Parameter struct {
 }
 
 type Operation struct {
+	Reference
 	Tags         []string      `json:"tags,omitempty"`
 	Summary      string        `json:"summary,omitempty"`
 	Description  string        `json:"description,omitempty"`
@@ -111,15 +121,11 @@ type Operation struct {
 	Parameters   []Parameter   `json:"parameters,omitempty"`
 	Consumes     []string      `json:"comsumes,omitempty"`
 	Produces     []string      `json:"produces,omitempty"`
-	Responses    Responses     `json:"responses"`
+	Responses    Responses     `json:"responses,omitempty"`
 	Schemes      []string      `json:"schemes,omitempty"`
 	Deprecated   bool          `json:"deprecated,omitempty"`
 	Security     Security      `json:"security,omitempty"`
 }
-
-type Security map[string][]string
-
-type Scopes map[string]string
 
 type SecurityDefiniton struct {
 	Type             string `json:"type"`
@@ -131,8 +137,6 @@ type SecurityDefiniton struct {
 	TokenURL         string `json:"tokenUrl"`
 	Scopes           Scopes `json:"scopes"`
 }
-
-type SecurityDefinitons map[string]SecurityDefiniton
 
 type Tag struct {
 	Name         string        `json:"name"`
@@ -146,17 +150,19 @@ type ExternalDocs struct {
 }
 
 type Swagger struct {
-	Swagger            string             `json:"swagger"`
-	Info               Info               `json:"info"`
-	Host               string             `json:"host,omitempty"`
-	BasePath           string             `json:"basePath,omitempty"`
-	Schemes            []string           `json:"schemes,omitempty"`
-	Consumes           []string           `json:"consumes,omitempty"`
-	Produces           []string           `json:"produces,omitempty"`
-	Paths              Paths              `json:"paths"`
-	Definitions        map[string]Schema  `json:"definitions,omitempty"`
-	SecurityDefinitons SecurityDefinitons `json:"securityDefinitions,omitempty"`
-	Security           Security           `json:"security,omitempty"`
-	Tags               []Tag              `json:"tags,omitempty"`
-	ExternalDocs       *ExternalDocs      `json:"externalDocs,omitempty"`
+	Swagger            string               `json:"swagger"`
+	Info               Info                 `json:"info"`
+	Host               string               `json:"host,omitempty"`
+	BasePath           string               `json:"basePath,omitempty"`
+	Schemes            []string             `json:"schemes,omitempty"`
+	Consumes           []string             `json:"consumes,omitempty"`
+	Produces           []string             `json:"produces,omitempty"`
+	Paths              Paths                `json:"paths"`
+	Definitions        map[string]Schema    `json:"definitions,omitempty"`
+	Parameters         map[string]Parameter `json:"parameters,omitempty"`
+	Responses          Responses            `json:"responses,omitempty"`
+	SecurityDefinitons SecurityDefinitons   `json:"securityDefinitions,omitempty"`
+	Security           Security             `json:"security,omitempty"`
+	Tags               []Tag                `json:"tags,omitempty"`
+	ExternalDocs       *ExternalDocs        `json:"externalDocs,omitempty"`
 }

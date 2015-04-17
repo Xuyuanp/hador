@@ -84,10 +84,7 @@ func (h *Hador) Travel() swagger.Paths {
 			spaths[leaf.Path()] = spath
 		}
 
-		op := swagger.Operation{
-			Summary: leaf.Path(),
-		}
-		spath[strings.ToLower(leaf.Method())] = op
+		spath[strings.ToLower(leaf.Method())] = leaf.operation
 
 		e = e.Next()
 	}
