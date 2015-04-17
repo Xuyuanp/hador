@@ -77,19 +77,21 @@ func (s *Static) Filter(ctx *Context, next Handler) {
 			return
 		}
 
-		path = path + s.IndexFile
-		file, err := s.Dir.Open(path)
+		indexPath := path + s.IndexFile
+		indexFile, err := s.Dir.Open(indexPath)
 		if err != nil {
 			next.Serve(ctx)
 			return
 		}
-		defer file.Close()
+		defer indexFile.Close()
 
-		fs, err = file.Stat()
-		if err != nil || fs.IsDir() {
+		indexfs, err := indexFile.Stat()
+		if err != nil || indexfs.IsDir() {
 			next.Serve(ctx)
 			return
 		}
+		http.ServeContent(ctx.Response, ctx.Request.Request, indexPath, indexfs.ModTime(), indexFile)
+		return
 	}
 
 	http.ServeContent(ctx.Response, ctx.Request.Request, path, fs.ModTime(), file)
