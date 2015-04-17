@@ -88,12 +88,10 @@ type XML struct {
 }
 
 type Schema struct {
-	Items
-	Discriminator string        `json:"discriminator,omitempty"`
-	ReadOnly      bool          `json:"readOnly,omitempty"`
-	XML           *XML          `json:"xml,omitempty"`
-	ExternalDocs  *ExternalDocs `json:"externalDocs,omitempty"`
-	Example       interface{}   `json:"example,omitempty"`
+	Reference
+	Type       string           `json:"type,omitempty"`
+	Required   []string         `json:"required,omitempty"`
+	Properties map[string]Items `json:"properties,omitempty"`
 }
 
 type Response struct {
@@ -105,10 +103,11 @@ type Response struct {
 
 type Parameter struct {
 	Items
-	Name        string `json:"name,omitempty"`
-	In          string `json:"in"`
-	Description string `json:"description,omitempty"`
-	Required    bool   `json:"required,omitempty"`
+	Name        string  `json:"name,omitempty"`
+	In          string  `json:"in"`
+	Description string  `json:"description,omitempty"`
+	Required    bool    `json:"required,omitempty"`
+	Schema      *Schema `json:"schema,omitempty"`
 }
 
 type Operation struct {
