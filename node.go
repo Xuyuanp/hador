@@ -17,6 +17,7 @@
 package hador
 
 import (
+	"container/list"
 	"fmt"
 	"regexp"
 	"strings"
@@ -266,5 +267,20 @@ func (n *Node) Path() string {
 	if ppath == "/" {
 		ppath = ""
 	}
+	if n.paramName != "" {
+		return ppath + "/{" + n.paramName + "}"
+	}
 	return ppath + "/" + n.Segment
+}
+
+func (n *Node) travel(llist *list.List) {
+	for _, l := range n.Leaves {
+		llist.PushBack(l)
+	}
+	for _, child := range n.rawChildren {
+		child.travel(llist)
+	}
+	for _, child := range n.regChildren {
+		child.travel(llist)
+	}
 }

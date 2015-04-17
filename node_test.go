@@ -242,7 +242,7 @@ func TestNode(t *testing.T) {
 			l2 := n.Get("/a/(?P<name>.+)", newSimpleHandler("GET"))
 			convey.So(l.Path(), convey.ShouldEqual, "/")
 			convey.So(l1.Path(), convey.ShouldEqual, "/a/b/c/d")
-			convey.So(l2.Path(), convey.ShouldEqual, "/a/(?P<name>.+)")
+			convey.So(l2.Path(), convey.ShouldEqual, "/a/{name}")
 		})
 	})
 }

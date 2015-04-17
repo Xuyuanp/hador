@@ -17,7 +17,13 @@
 
 package hador
 
-import "net/http"
+import (
+	"container/list"
+	"net/http"
+	"strings"
+
+	"github.com/go-hodor/hador/swagger"
+)
 
 // Hador struct
 type Hador struct {
@@ -60,4 +66,30 @@ func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // Serve implements Handler interface
 func (h *Hador) Serve(ctx *Context) {
 	h.FilterChain.Serve(ctx)
+}
+
+func (h *Hador) Travel() swagger.Paths {
+	llist := list.New()
+	h.root.travel(llist)
+
+	spaths := make(swagger.Paths)
+
+	e := llist.Front()
+	for e != nil {
+		leaf := e.Value.(*Leaf)
+
+		spath, ok := spaths[leaf.Path()]
+		if !ok {
+			spath = make(swagger.Path)
+			spaths[leaf.Path()] = spath
+		}
+
+		op := swagger.Operation{
+			Summary: leaf.Path(),
+		}
+		spath[strings.ToLower(leaf.Method())] = op
+
+		e = e.Next()
+	}
+	return spaths
 }
