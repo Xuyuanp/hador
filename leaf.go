@@ -19,7 +19,6 @@ package hador
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/go-hodor/hador/swagger"
 )
@@ -119,6 +118,30 @@ func (l *Leaf) DocResponse(code string, resp swagger.Response) *Leaf {
 	return l
 }
 
+func (l *Leaf) DocResponseSimple(code, desc string) *Leaf {
+	resp := swagger.Response{Description: desc}
+	l.DocResponse(code, resp)
+	return l
+}
+
+func (l *Leaf) DocResponseRef(code, desc, ref string) *Leaf {
+	resp := swagger.Response{
+		Description: desc,
+		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: ref}},
+	}
+	l.DocResponse(code, resp)
+	return l
+}
+
+func (l *Leaf) DocResponseModel(code, desc string, model interface{}) *Leaf {
+	resp := swagger.Response{
+		Description: desc,
+		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: "#/definitions/" + reflect.TypeOf(model).Name()}},
+	}
+	l.DocResponse(code, resp)
+	return l
+}
+
 func (l *Leaf) DocParameter(param swagger.Parameter) *Leaf {
 	if l.operation.Parameters == nil {
 		l.operation.Parameters = make([]swagger.Parameter, 0)
@@ -173,24 +196,16 @@ func (l *Leaf) DocMultiQueryParameter(paramName, paramType, desc string, require
 	return l
 }
 
-func ParseModel(model interface{}) *swagger.Schema {
-	schema := &swagger.Schema{}
-	switch model.(type) {
-	case uint8, uint16, uint32, uint64, int8, int16, int32, int64, uint, int:
-	case float32, float64:
-	case string:
-	case bool:
-	default:
-		schema.Properties = make(map[string]swagger.Items)
-		t := reflect.TypeOf(model)
-		fieldsCount := t.NumField()
-		for i := 0; i < fieldsCount; i++ {
-			field := t.Field(i)
-			schema.Properties[strings.ToLower(field.Name)] = swagger.Items{Type: field.Type.String()}
-		}
-		schema.Type = "object"
+func (l *Leaf) DocBodyRefParameter(paramName, desc string, ref string, required bool) *Leaf {
+	param := swagger.Parameter{
+		Name:        paramName,
+		In:          "body",
+		Description: desc,
+		Required:    required,
+		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: ref}},
 	}
-	return schema
+	l.DocParameter(param)
+	return l
 }
 
 func (l *Leaf) DocBodyParameter(paramName, desc string, model interface{}, required bool) *Leaf {
@@ -199,19 +214,7 @@ func (l *Leaf) DocBodyParameter(paramName, desc string, model interface{}, requi
 		In:          "body",
 		Description: desc,
 		Required:    required,
-		Schema:      ParseModel(model),
-	}
-	l.DocParameter(param)
-	return l
-}
-
-func (l *Leaf) DocBodyRefParameter(paramName, desc string, ref string, required bool) *Leaf {
-	param := swagger.Parameter{
-		Name:        paramName,
-		In:          "body",
-		Description: desc,
-		Required:    required,
-		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: ref}},
+		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: "#/definitions/" + reflect.TypeOf(model).Name()}},
 	}
 	l.DocParameter(param)
 	return l

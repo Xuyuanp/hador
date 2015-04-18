@@ -58,8 +58,9 @@ type Reference struct {
 }
 
 type Items struct {
+	Reference
 	Items            *Items        `json:"items,omitempty"`
-	Type             string        `json:"type"`
+	Type             string        `json:"type,omitempty"`
 	Format           string        `json:"format,omitempty"`
 	CollectionFormat string        `json:"collectionFormat,omitempty"`
 	Default          interface{}   `json:"default,omitempty"`
@@ -148,7 +149,9 @@ type ExternalDocs struct {
 	URL         string `json:"url"`
 }
 
-type Swagger struct {
+type Definitions map[string]Schema
+
+type Document struct {
 	Swagger            string               `json:"swagger"`
 	Info               Info                 `json:"info"`
 	Host               string               `json:"host,omitempty"`
@@ -157,7 +160,7 @@ type Swagger struct {
 	Consumes           []string             `json:"consumes,omitempty"`
 	Produces           []string             `json:"produces,omitempty"`
 	Paths              Paths                `json:"paths"`
-	Definitions        map[string]Schema    `json:"definitions,omitempty"`
+	Definitions        Definitions          `json:"definitions,omitempty"`
 	Parameters         map[string]Parameter `json:"parameters,omitempty"`
 	Responses          Responses            `json:"responses,omitempty"`
 	SecurityDefinitons SecurityDefinitons   `json:"securityDefinitions,omitempty"`
