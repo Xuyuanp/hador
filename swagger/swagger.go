@@ -17,33 +17,44 @@
 
 package swagger
 
+// Security type
 type Security map[string][]string
 
+// Scopes type
 type Scopes map[string]string
 
+// Paths type
 type Paths map[string]Path
 
+// Path type
 type Path map[string]Operation
 
+// Responses type
 type Responses map[string]Response
 
+// Headers type
 type Headers map[string]Header
 
+// Example type
 type Example map[string]interface{}
 
+// SecurityDefinitons type
 type SecurityDefinitons map[string]SecurityDefiniton
 
+// Contact struct
 type Contact struct {
 	Name  string `json:"name,omitempty"`
 	URL   string `json:"url,omitempty"`
 	Email string `json:"email,omitempty"`
 }
 
+// License struct
 type License struct {
 	Name string `json:"name"`
 	URL  string `json:"url,omitempty"`
 }
 
+// Info struct
 type Info struct {
 	Title          string   `json:"title"`
 	Description    string   `json:"description,omitempty"`
@@ -53,10 +64,12 @@ type Info struct {
 	License        *License `json:"license,omitempty"`
 }
 
+// Reference struct
 type Reference struct {
 	Ref string `json:"$ref,omitempty"`
 }
 
+// Items struct
 type Items struct {
 	Reference
 	Items            *Items        `json:"items,omitempty"`
@@ -75,11 +88,13 @@ type Items struct {
 	MultipleOf       int           `json:"multipleOf,omitempty"`
 }
 
+// Header struct
 type Header struct {
 	Items
 	Description string `json:"description,omitempty"`
 }
 
+// XML struct
 type XML struct {
 	Name      string `json:"name,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
@@ -88,6 +103,7 @@ type XML struct {
 	Wrapped   bool   `json:"wrapped,omitempty"`
 }
 
+// Schema struct
 type Schema struct {
 	Reference
 	Type       string           `json:"type,omitempty"`
@@ -95,6 +111,7 @@ type Schema struct {
 	Properties map[string]Items `json:"properties,omitempty"`
 }
 
+// Response struct
 type Response struct {
 	Description string   `json:"description"`
 	Schema      *Schema  `json:"schema,omitempty"`
@@ -102,6 +119,7 @@ type Response struct {
 	Example     Example  `json:"example,omitempty"`
 }
 
+// Parameter struct
 type Parameter struct {
 	Items
 	Name        string  `json:"name,omitempty"`
@@ -111,6 +129,7 @@ type Parameter struct {
 	Schema      *Schema `json:"schema,omitempty"`
 }
 
+// Operation struct
 type Operation struct {
 	Reference
 	Tags         []string      `json:"tags,omitempty"`
@@ -127,6 +146,7 @@ type Operation struct {
 	Security     Security      `json:"security,omitempty"`
 }
 
+// SecurityDefiniton struct
 type SecurityDefiniton struct {
 	Type             string `json:"type"`
 	Description      string `json:"description,omitempty"`
@@ -138,19 +158,20 @@ type SecurityDefiniton struct {
 	Scopes           Scopes `json:"scopes"`
 }
 
+// Tag struct
 type Tag struct {
 	Name         string        `json:"name"`
 	Description  string        `json:"description,omitempty"`
 	ExternalDocs *ExternalDocs `json:"externalDocs,omitempty"`
 }
 
+// ExternalDocs struct
 type ExternalDocs struct {
 	Description string `json:"description,omitempty"`
 	URL         string `json:"url"`
 }
 
-type Definitions map[string]Schema
-
+// Document struct
 type Document struct {
 	Swagger            string               `json:"swagger"`
 	Info               Info                 `json:"info"`

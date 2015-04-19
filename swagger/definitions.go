@@ -23,6 +23,9 @@ import (
 	"strings"
 )
 
+// Definitions is global model definitions
+type Definitions map[string]Schema
+
 // AddModelFrom adds model definitions from model
 func (d Definitions) AddModelFrom(model interface{}) {
 	d.addModel(reflect.TypeOf(model), "")
