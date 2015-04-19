@@ -70,7 +70,7 @@ func (l *Leaf) AddFilters(filters ...Filter) *Leaf {
 	return l
 }
 
-func (l *Leaf) DocTags(tags []string) *Leaf {
+func (l *Leaf) DocTags(tags ...string) *Leaf {
 	l.operation.Tags = tags
 	return l
 }
