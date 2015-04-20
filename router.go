@@ -36,8 +36,3 @@ type Router interface {
 
 	Group(string, func(Router), ...Filter)
 }
-
-// NewRouter creates Router interface
-func NewRouter(h *Hador) Router {
-	return NewNode("", 0)
-}
