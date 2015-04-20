@@ -24,22 +24,24 @@ import (
 
 // Context struct
 type Context struct {
-	Request       *Request
+	Request       *http.Request
 	Response      ResponseWriter
 	Params        Params
 	ErrorHandlers map[int]Handler
 	data          map[string]interface{}
+	segments      []string
 	Logger        Logger
 }
 
 // NewContext creates new Context instance
 func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Context {
 	return &Context{
-		Request:       NewRequest(req),
+		Request:       req,
 		Response:      NewResponseWriter(w),
 		Params:        make(Params),
 		ErrorHandlers: make(map[int]Handler),
 		data:          make(map[string]interface{}),
+		segments:      genSegments(req.URL.Path),
 		Logger:        logger,
 	}
 }
@@ -50,7 +52,7 @@ func (ctx *Context) NotFound() {
 		h.Serve(ctx)
 		return
 	}
-	http.NotFound(ctx.Response, ctx.Request.Request)
+	http.NotFound(ctx.Response, ctx.Request)
 }
 
 // MethodNotAllowed handles 405 error

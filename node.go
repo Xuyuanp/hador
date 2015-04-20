@@ -48,7 +48,7 @@ type dispatcher struct {
 
 func (d *dispatcher) Serve(ctx *Context) {
 	n := d.node
-	segments := ctx.Request.segments
+	segments := ctx.segments
 	// path matches
 	if len(segments) == n.Depth {
 		// 404 not found

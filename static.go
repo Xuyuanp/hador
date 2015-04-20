@@ -73,7 +73,7 @@ func (s *Static) Filter(ctx *Context, next Handler) {
 	// serve index file
 	if fs.IsDir() {
 		if !strings.HasSuffix(ctx.Request.URL.Path, "/") {
-			http.Redirect(ctx.Response, ctx.Request.Request, ctx.Request.URL.Path+"/", http.StatusFound)
+			http.Redirect(ctx.Response, ctx.Request, ctx.Request.URL.Path+"/", http.StatusFound)
 			return
 		}
 
@@ -90,9 +90,9 @@ func (s *Static) Filter(ctx *Context, next Handler) {
 			next.Serve(ctx)
 			return
 		}
-		http.ServeContent(ctx.Response, ctx.Request.Request, indexPath, indexfs.ModTime(), indexFile)
+		http.ServeContent(ctx.Response, ctx.Request, indexPath, indexfs.ModTime(), indexFile)
 		return
 	}
 
-	http.ServeContent(ctx.Response, ctx.Request.Request, path, fs.ModTime(), file)
+	http.ServeContent(ctx.Response, ctx.Request, path, fs.ModTime(), file)
 }
