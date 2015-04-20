@@ -116,7 +116,9 @@ func (d Definitions) buildProperty(field reflect.StructField, schema *Schema, mo
 	case reflect.Struct:
 		return d.buildStructProperty(field, jsonName, modelName)
 	case reflect.Slice, reflect.Array:
+		return d.buildArrayProperty(field, jsonName, modelName)
 	case reflect.Ptr:
+		return d.buildPointerProperty(field, jsonName, modelName)
 	case reflect.Map:
 		prop.Type = "any"
 		return
@@ -125,7 +127,25 @@ func (d Definitions) buildProperty(field reflect.StructField, schema *Schema, mo
 }
 
 func (d Definitions) buildPointerProperty(field reflect.StructField, jsonName, modelName string) (pName string, prop Items) {
+	fieldType := field.Type
+	elem := fieldType.Elem()
+	if elem.Kind() == reflect.Slice || elem.Kind() == reflect.Array {
+		pName = jsonName
+		prop.Type = "array"
 
+		if d.isPrimitiveType(elem.Name()) {
+			prop.Items = &Items{
+				Type:   d.jsonSchemaType(elem.Name()),
+				Format: d.jsonSchemaFormat(elem.Name()),
+			}
+		}
+
+		return
+	}
+	pName = jsonName
+	pType := elem.Name()
+	prop.Ref = "#/definitions/" + pType
+	d.addModel(elem, pType)
 	return
 }
 
@@ -138,6 +158,16 @@ func (d Definitions) buildStructProperty(field reflect.StructField, jsonName, mo
 }
 
 func (d Definitions) buildArrayProperty(field reflect.StructField, jsonName, modelName string) (ajName string, prop Items) {
+	elem := field.Type.Elem()
+	ajName = jsonName
+	prop.Type = "array"
+
+	if d.isPrimitiveType(elem.Name()) {
+		prop.Items = &Items{
+			Type:   d.jsonSchemaType(elem.Name()),
+			Format: d.jsonSchemaFormat(elem.Name()),
+		}
+	}
 	return
 }
 
