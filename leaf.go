@@ -31,7 +31,8 @@ type Leaf struct {
 	handler Handler
 	method  string
 
-	operation swagger.Operation
+	DocIgnored bool
+	operation  swagger.Operation
 }
 
 // NewLeaf creates new Leaf instance
@@ -67,6 +68,11 @@ func (l *Leaf) Parent() *Node {
 // AddFilters add filters into FilterChain
 func (l *Leaf) AddFilters(filters ...Filter) *Leaf {
 	l.FilterChain.AddFilters(filters...)
+	return l
+}
+
+func (l *Leaf) DocIgnore(ignored bool) *Leaf {
+	l.DocIgnored = ignored
 	return l
 }
 

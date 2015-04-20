@@ -79,15 +79,26 @@ func (h *Hador) Serve(ctx *Context) {
 	h.FilterChain.Serve(ctx)
 }
 
-func (h *Hador) travel() swagger.Paths {
+func (h *Hador) travel() []*Leaf {
 	llist := list.New()
 	h.root.travel(llist)
 
-	spaths := make(swagger.Paths)
+	leaves := make([]*Leaf, llist.Len())
+	i := 0
+	for e := llist.Front(); e != nil; e = e.Next() {
+		leaves[i] = e.Value.(*Leaf)
+		i++
+	}
+	return leaves
+}
 
-	e := llist.Front()
-	for e != nil {
-		leaf := e.Value.(*Leaf)
+func (h *Hador) travelPaths() swagger.Paths {
+	spaths := make(swagger.Paths)
+	leaves := h.travel()
+	for _, leaf := range leaves {
+		if leaf.DocIgnored {
+			continue
+		}
 
 		spath, ok := spaths[leaf.Path()]
 		if !ok {
@@ -96,22 +107,24 @@ func (h *Hador) travel() swagger.Paths {
 		}
 
 		spath[strings.ToLower(leaf.Method())] = leaf.operation
-
-		e = e.Next()
 	}
 	return spaths
 }
 
 // Swagger setups swagger config
 func (h *Hador) Swagger(config swagger.Config) {
-	h.Document.Paths = h.travel()
-	h.Get(config.SwaggerPath, HandlerFunc(func(ctx *Context) {
+	// handle API path
+	h.Get(config.APIPath, HandlerFunc(func(ctx *Context) {
 		ctx.Response.Header().Set("Content-Type", "application/json; charset-utf8")
 		json.NewEncoder(ctx.Response).Encode(h.Document)
-	}))
+	})).DocIgnore(!config.SelfDocEnabled)
 
-	s := NewStatic(http.Dir(config.SwaggerUIFilePath))
-	s.Prefix = config.SwaggerUIPrefix
+	// generate paths doc
+	h.Document.Paths = h.travelPaths()
+
+	// serve swagger-ui file
+	s := NewStatic(http.Dir(config.UIFilePath))
+	s.Prefix = config.UIPrefix
 	h.Before(s)
 }
 

@@ -19,7 +19,18 @@ package swagger
 
 // Config struct
 type Config struct {
-	SwaggerUIFilePath string
-	SwaggerUIPrefix   string
-	SwaggerPath       string
+	// UIFilePath is the location of folder containing swagger-ui index.html file. e.g. swagger-ui/dist
+	UIFilePath string
+
+	// UIPrefx is the path where swagger-ui whill be served. e.g. /apidocs
+	UIPrefix string
+
+	// APIPath is the path where JSON API is available. e.g. /apidocs.json
+	APIPath string
+
+	// CORSDisabled disable CORS filter. False on default.
+	CORSDisabled bool
+
+	// SelfDocEnabled enable the swagger-ui path API in doc. False on default.
+	SelfDocEnabled bool
 }
