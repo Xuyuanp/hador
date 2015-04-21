@@ -128,21 +128,25 @@ func (h *Hador) Swagger(config swagger.Config) {
 	h.Before(s)
 }
 
+// DocHost sets dochost of document
 func (h *Hador) DocHost(host string) *Hador {
 	h.Document.Host = host
 	return h
 }
 
+// DocBasePath sets basepath of document
 func (h *Hador) DocBasePath(path string) *Hador {
 	h.Document.BasePath = path
 	return h
 }
 
+// DocDefinition adds model definition
 func (h *Hador) DocDefinition(model interface{}) *Hador {
 	h.Document.Definitions.AddModelFrom(model)
 	return h
 }
 
+// DocInfo sets info of document
 func (h *Hador) DocInfo(title, description, version, termsOfServeice string) *Hador {
 	h.Document.Info.Title = title
 	h.Document.Info.Description = description
@@ -151,6 +155,7 @@ func (h *Hador) DocInfo(title, description, version, termsOfServeice string) *Ha
 	return h
 }
 
+// DocInfoContace sets info contace of document
 func (h *Hador) DocInfoContace(name, url, email string) *Hador {
 	h.Document.Info.Contact = &swagger.Contact{
 		Name:  name,
@@ -160,6 +165,7 @@ func (h *Hador) DocInfoContace(name, url, email string) *Hador {
 	return h
 }
 
+// DocInfoLicense sets info license of document
 func (h *Hador) DocInfoLicense(name, url string) *Hador {
 	h.Document.Info.License = &swagger.License{
 		Name: name,
@@ -168,16 +174,19 @@ func (h *Hador) DocInfoLicense(name, url string) *Hador {
 	return h
 }
 
+// DocConsumes sets consumes of document
 func (h *Hador) DocConsumes(mimeTypes ...string) *Hador {
 	h.Document.Consumes = mimeTypes
 	return h
 }
 
+// DocProduces sets produces of document
 func (h *Hador) DocProduces(mimeTypes ...string) *Hador {
 	h.Document.Produces = mimeTypes
 	return h
 }
 
+// DocTag adds tag to document
 func (h *Hador) DocTag(name, description string) *Hador {
 	h.Document.Tags = append(h.Document.Tags,
 		swagger.Tag{Name: name, Description: description})

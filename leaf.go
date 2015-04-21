@@ -71,51 +71,61 @@ func (l *Leaf) AddFilters(filters ...Filter) *Leaf {
 	return l
 }
 
+// DocIgnore sets if this route would be ignored in document
 func (l *Leaf) DocIgnore(ignored bool) *Leaf {
 	l.DocIgnored = ignored
 	return l
 }
 
+// DocTags sets tags of this route
 func (l *Leaf) DocTags(tags ...string) *Leaf {
 	l.operation.Tags = tags
 	return l
 }
 
+// DocSummary sets summary of this route
 func (l *Leaf) DocSummary(sum string) *Leaf {
 	l.operation.Summary = sum
 	return l
 }
 
+// DocDescription sets description of this route
 func (l *Leaf) DocDescription(desc string) *Leaf {
 	l.operation.Description = desc
 	return l
 }
 
+// DocOperationID sets operation id of this route
 func (l *Leaf) DocOperationID(oid string) *Leaf {
 	l.operation.OperationID = oid
 	return l
 }
 
+// DocProduces sets produce mime types of this route
 func (l *Leaf) DocProduces(mimeTypes ...string) *Leaf {
 	l.operation.Produces = mimeTypes
 	return l
 }
 
+// DocConsumes sets consume mime types of this route
 func (l *Leaf) DocConsumes(mimeTypes ...string) *Leaf {
 	l.operation.Consumes = mimeTypes
 	return l
 }
 
+// DocDeprecated sets if this route is deprecated
 func (l *Leaf) DocDeprecated(d bool) *Leaf {
 	l.operation.Deprecated = d
 	return l
 }
 
-func (l *Leaf) DocSchemes(schemes []string) *Leaf {
+// DocSchemes set schemes of this route
+func (l *Leaf) DocSchemes(schemes ...string) *Leaf {
 	l.operation.Schemes = schemes
 	return l
 }
 
+// DocResponse sets response of this route
 func (l *Leaf) DocResponse(code string, resp swagger.Response) *Leaf {
 	if l.operation.Responses == nil {
 		l.operation.Responses = make(swagger.Responses)
@@ -124,12 +134,14 @@ func (l *Leaf) DocResponse(code string, resp swagger.Response) *Leaf {
 	return l
 }
 
+// DocResponseSimple sets simple response which only contains code and description info of this route
 func (l *Leaf) DocResponseSimple(code, desc string) *Leaf {
 	resp := swagger.Response{Description: desc}
 	l.DocResponse(code, resp)
 	return l
 }
 
+// DocResponseRef sets response model ref of this route
 func (l *Leaf) DocResponseRef(code, desc, ref string) *Leaf {
 	resp := swagger.Response{
 		Description: desc,
@@ -139,6 +151,7 @@ func (l *Leaf) DocResponseRef(code, desc, ref string) *Leaf {
 	return l
 }
 
+// DocResponseModel sets response model of this route
 func (l *Leaf) DocResponseModel(code, desc string, model interface{}) *Leaf {
 	resp := swagger.Response{
 		Description: desc,
@@ -148,6 +161,7 @@ func (l *Leaf) DocResponseModel(code, desc string, model interface{}) *Leaf {
 	return l
 }
 
+// DocParameter sets parameter of this route
 func (l *Leaf) DocParameter(param swagger.Parameter) *Leaf {
 	if l.operation.Parameters == nil {
 		l.operation.Parameters = make([]swagger.Parameter, 0)
@@ -156,6 +170,7 @@ func (l *Leaf) DocParameter(param swagger.Parameter) *Leaf {
 	return l
 }
 
+// DocPathParameter sets path parameter of this route
 func (l *Leaf) DocPathParameter(paramName, paramType, desc string, required bool) *Leaf {
 	param := swagger.Parameter{
 		Name:        paramName,
@@ -170,6 +185,7 @@ func (l *Leaf) DocPathParameter(paramName, paramType, desc string, required bool
 	return l
 }
 
+// DocQueryParameter sets query parameter of this route
 func (l *Leaf) DocQueryParameter(paramName, paramType, desc string, required bool) *Leaf {
 	param := swagger.Parameter{
 		Name:        paramName,
@@ -184,6 +200,7 @@ func (l *Leaf) DocQueryParameter(paramName, paramType, desc string, required boo
 	return l
 }
 
+// DocMultiQueryParameter sets multi query parameter of this route
 func (l *Leaf) DocMultiQueryParameter(paramName, paramType, desc string, required bool) *Leaf {
 	param := swagger.Parameter{
 		Name:        paramName,
@@ -202,6 +219,7 @@ func (l *Leaf) DocMultiQueryParameter(paramName, paramType, desc string, require
 	return l
 }
 
+// DocBodyRefParameter set body ref parameter of this route
 func (l *Leaf) DocBodyRefParameter(paramName, desc string, ref string, required bool) *Leaf {
 	param := swagger.Parameter{
 		Name:        paramName,
@@ -214,6 +232,7 @@ func (l *Leaf) DocBodyRefParameter(paramName, desc string, ref string, required 
 	return l
 }
 
+// DocBodyParameter set body model parameter of this route
 func (l *Leaf) DocBodyParameter(paramName, desc string, model interface{}, required bool) *Leaf {
 	param := swagger.Parameter{
 		Name:        paramName,
@@ -226,6 +245,7 @@ func (l *Leaf) DocBodyParameter(paramName, desc string, model interface{}, requi
 	return l
 }
 
+// DocSecurity set security of this route
 func (l *Leaf) DocSecurity(name string, scopes []string) *Leaf {
 	if l.operation.Security == nil {
 		l.operation.Security = make(swagger.Security)
