@@ -28,9 +28,6 @@ type Config struct {
 	// APIPath is the path where JSON API is available. e.g. /apidocs.json
 	APIPath string
 
-	// CORSDisabled disable CORS filter. False on default.
-	CORSDisabled bool
-
 	// SelfDocEnabled enable the swagger-ui path API in doc. False on default.
 	SelfDocEnabled bool
 }

@@ -111,10 +111,10 @@ func (h *Hador) travelPaths() swagger.Paths {
 	return spaths
 }
 
-// Swagger setups swagger config
-func (h *Hador) Swagger(config swagger.Config) {
+// Swagger setups swagger config, returns json API path Leaf
+func (h *Hador) Swagger(config swagger.Config) *Leaf {
 	// handle API path
-	h.Get(config.APIPath, HandlerFunc(func(ctx *Context) {
+	leaf := h.Get(config.APIPath, HandlerFunc(func(ctx *Context) {
 		ctx.Response.Header().Set("Content-Type", "application/json; charset-utf8")
 		json.NewEncoder(ctx.Response).Encode(h.Document)
 	})).DocIgnore(!config.SelfDocEnabled)
@@ -123,9 +123,13 @@ func (h *Hador) Swagger(config swagger.Config) {
 	h.Document.Paths = h.travelPaths()
 
 	// serve swagger-ui file
-	s := NewStatic(http.Dir(config.UIFilePath))
-	s.Prefix = config.UIPrefix
-	h.Before(s)
+	if config.UIFilePath != "" {
+		s := NewStatic(http.Dir(config.UIFilePath))
+		s.Prefix = config.UIPrefix
+		h.Before(s)
+	}
+
+	return leaf
 }
 
 // DocHost sets dochost of document
