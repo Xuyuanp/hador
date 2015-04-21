@@ -74,6 +74,9 @@ func (fc *FilterChain) Serve(ctx *Context) {
 
 // Before implements Beforer interface
 func (fc *FilterChain) Before(filter Filter) Beforer {
+	if filter == nil {
+		return fc
+	}
 	tmp := fc
 	for tmp.next != nil {
 		tmp = tmp.next
