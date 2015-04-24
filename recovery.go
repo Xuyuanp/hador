@@ -23,8 +23,8 @@ import (
 )
 
 // NewRecoveryFilter return a Filter to recover all unrecovered panic
-func NewRecoveryFilter(logger Logger) Filter {
-	return FilterFunc(func(ctx *Context, next Handler) {
+func NewRecoveryFilter(logger Logger) FilterFunc {
+	return func(ctx *Context, next Handler) {
 		defer func() {
 			if err := recover(); err != nil {
 				ctx.Response.WriteHeader(http.StatusInternalServerError)
@@ -35,5 +35,5 @@ func NewRecoveryFilter(logger Logger) Filter {
 		}()
 
 		next.Serve(ctx)
-	})
+	}
 }

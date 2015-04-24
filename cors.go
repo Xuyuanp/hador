@@ -165,7 +165,7 @@ func (o *CORSOptions) IsOriginAllowed(origin string) (allowed bool) {
 }
 
 // Allow enables CORS for requests those match the provided options.
-func Allow(opts *CORSOptions) Filter {
+func Allow(opts *CORSOptions) FilterFunc {
 	// Allow default headers if nothing is specified.
 	if len(opts.AllowHeaders) == 0 {
 		opts.AllowHeaders = defaultAllowHeaders
@@ -178,7 +178,7 @@ func Allow(opts *CORSOptions) Filter {
 		allowOriginPatterns = append(allowOriginPatterns, "^"+pattern+"$")
 	}
 
-	return FilterFunc(func(ctx *Context, next Handler) {
+	return func(ctx *Context, next Handler) {
 		req := ctx.Request
 		res := ctx.Response
 		var (
@@ -207,5 +207,5 @@ func Allow(opts *CORSOptions) Filter {
 		}
 
 		next.Serve(ctx)
-	})
+	}
 }
