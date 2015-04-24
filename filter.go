@@ -74,6 +74,9 @@ func (fc *FilterChain) Serve(ctx *Context) {
 
 // Before implements Beforer interface
 func (fc *FilterChain) Before(filter Filter) Beforer {
+	if filter == nil {
+		return fc
+	}
 	tmp := fc
 	for tmp.next != nil {
 		tmp = tmp.next
@@ -89,4 +92,11 @@ func (fc *FilterChain) Before(filter Filter) Beforer {
 // BeforeFunc implements Beforer interface
 func (fc *FilterChain) BeforeFunc(f func(*Context, Handler)) Beforer {
 	return fc.Before(FilterFunc(f))
+}
+
+// AddFilters adds all filters to chain
+func (fc *FilterChain) AddFilters(filters ...Filter) {
+	for _, filter := range filters {
+		fc.Before(filter)
+	}
 }

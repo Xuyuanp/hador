@@ -17,21 +17,40 @@
 
 package hador
 
-import "net/http"
+import (
+	"container/list"
+	"encoding/json"
+	"net/http"
+	"strings"
+
+	"github.com/go-hodor/hador/swagger"
+)
 
 // Hador struct
 type Hador struct {
 	Router
 	*FilterChain
-	Logger Logger
+	Logger   Logger
+	root     *Node
+	Document *swagger.Document
 }
 
 // New creates new Hador instance
 func New() *Hador {
 	h := &Hador{
 		Logger: defaultLogger,
+		root:   NewNode("", 0),
+		Document: &swagger.Document{
+			Swagger:     "2.0.0",
+			Definitions: swagger.Definitions{},
+			Tags:        []swagger.Tag{},
+			Responses:   swagger.Responses{},
+			Parameters:  map[string]swagger.Parameter{},
+			Consumes:    []string{},
+			Produces:    []string{},
+		},
 	}
-	h.Router = NewRouter(h)
+	h.Router = h.root
 	h.FilterChain = NewFilterChain(h.Router)
 	return h
 }
@@ -58,4 +77,125 @@ func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 // Serve implements Handler interface
 func (h *Hador) Serve(ctx *Context) {
 	h.FilterChain.Serve(ctx)
+}
+
+func (h *Hador) travel() []*Leaf {
+	llist := list.New()
+	h.root.travel(llist)
+
+	leaves := make([]*Leaf, llist.Len())
+	i := 0
+	for e := llist.Front(); e != nil; e = e.Next() {
+		leaves[i] = e.Value.(*Leaf)
+		i++
+	}
+	return leaves
+}
+
+func (h *Hador) travelPaths() swagger.Paths {
+	spaths := make(swagger.Paths)
+	leaves := h.travel()
+	for _, leaf := range leaves {
+		if leaf.DocIgnored {
+			continue
+		}
+
+		spath, ok := spaths[leaf.Path()]
+		if !ok {
+			spath = make(swagger.Path)
+			spaths[leaf.Path()] = spath
+		}
+
+		spath[strings.ToLower(leaf.Method())] = leaf.operation
+	}
+	return spaths
+}
+
+// SwaggerHandler returns swagger json api handler
+func (h *Hador) SwaggerHandler() Handler {
+	return HandlerFunc(func(ctx *Context) {
+		h.Document.Paths = h.travelPaths()
+		ctx.Response.Header().Set("Content-Type", "application/json; charset-utf8")
+		json.NewEncoder(ctx.Response).Encode(h.Document)
+	})
+}
+
+// Swagger setups swagger config, returns json API path Leaf
+func (h *Hador) Swagger(config swagger.Config) *Leaf {
+	// handle API path
+	leaf := h.Get(config.APIPath, h.SwaggerHandler()).DocIgnore(!config.SelfDocEnabled)
+
+	// serve swagger-ui file
+	if config.UIFilePath != "" {
+		s := NewStatic(http.Dir(config.UIFilePath))
+		s.Prefix = config.UIPrefix
+		h.Before(s)
+	}
+
+	return leaf
+}
+
+// DocHost sets dochost of document
+func (h *Hador) DocHost(host string) *Hador {
+	h.Document.Host = host
+	return h
+}
+
+// DocBasePath sets basepath of document
+func (h *Hador) DocBasePath(path string) *Hador {
+	h.Document.BasePath = path
+	return h
+}
+
+// DocDefinition adds model definition
+func (h *Hador) DocDefinition(model interface{}) *Hador {
+	h.Document.Definitions.AddModelFrom(model)
+	return h
+}
+
+// DocInfo sets info of document
+func (h *Hador) DocInfo(title, description, version, termsOfServeice string) *Hador {
+	h.Document.Info.Title = title
+	h.Document.Info.Description = description
+	h.Document.Info.Version = version
+	h.Document.Info.TermsOfService = termsOfServeice
+	return h
+}
+
+// DocInfoContace sets info contace of document
+func (h *Hador) DocInfoContace(name, url, email string) *Hador {
+	h.Document.Info.Contact = &swagger.Contact{
+		Name:  name,
+		URL:   url,
+		Email: email,
+	}
+	return h
+}
+
+// DocInfoLicense sets info license of document
+func (h *Hador) DocInfoLicense(name, url string) *Hador {
+	h.Document.Info.License = &swagger.License{
+		Name: name,
+		URL:  url,
+	}
+	return h
+}
+
+// DocConsumes sets consumes of document
+func (h *Hador) DocConsumes(mimeTypes ...string) *Hador {
+	h.Document.Consumes = mimeTypes
+	return h
+}
+
+// DocProduces sets produces of document
+func (h *Hador) DocProduces(mimeTypes ...string) *Hador {
+	h.Document.Produces = mimeTypes
+	return h
+}
+
+// DocTag adds tag to document
+func (h *Hador) DocTag(name, description string) *Hador {
+	h.Document.Tags = append(h.Document.Tags,
+		swagger.Tag{Name: name, Description: description})
+	return h
 }

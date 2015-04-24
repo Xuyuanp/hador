@@ -21,23 +21,18 @@ package hador
 type Router interface {
 	Handler
 
-	Options(string, Handler) Beforer
-	Get(string, Handler) Beforer
-	Head(string, Handler) Beforer
-	Post(string, Handler) Beforer
-	Put(string, Handler) Beforer
-	Delete(string, Handler) Beforer
-	Trace(string, Handler) Beforer
-	Connect(string, Handler) Beforer
-	Patch(string, Handler) Beforer
-	Any(string, Handler) Beforer
+	Options(string, Handler, ...Filter) *Leaf
+	Get(string, Handler, ...Filter) *Leaf
+	Head(string, Handler, ...Filter) *Leaf
+	Post(string, Handler, ...Filter) *Leaf
+	Put(string, Handler, ...Filter) *Leaf
+	Delete(string, Handler, ...Filter) *Leaf
+	Trace(string, Handler, ...Filter) *Leaf
+	Connect(string, Handler, ...Filter) *Leaf
+	Patch(string, Handler, ...Filter) *Leaf
+	Any(string, Handler, ...Filter) *Leaf
 
-	AddRoute(string, string, Handler) Beforer
+	AddRoute(string, string, Handler, ...Filter) *Leaf
 
-	Group(string, func(Router)) Beforer
-}
-
-// NewRouter creates Router interface
-func NewRouter(h *Hador) Router {
-	return NewNode(h, "", 0)
+	Group(string, func(Router), ...Filter)
 }

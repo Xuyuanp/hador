@@ -24,12 +24,10 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
-var h = New()
-
 func TestNode(t *testing.T) {
 	convey.Convey("Test tree", t, func() {
 		convey.Convey("Test All method", func() {
-			n := NewNode(h, "", 0)
+			n := NewNode("", 0)
 			n.Options("/a/b", newSimpleHandler("OPTIONS"))
 			n.Get("/a/b", newSimpleHandler("GET"))
 			n.Head("/a/b", newSimpleHandler("HEAD"))
@@ -120,7 +118,7 @@ func TestNode(t *testing.T) {
 				})
 			})
 			convey.Convey("Test Group", func() {
-				n := NewNode(h, "", 0)
+				n := NewNode("", 0)
 				n.Group("/a", func(r Router) {
 					r.Get("/b", newSimpleHandler("GET"))
 					r.Post("/c", newSimpleHandler("POST"))
@@ -144,15 +142,15 @@ func TestNode(t *testing.T) {
 				defer func() {
 					convey.So(recover(), convey.ShouldNotBeNil)
 				}()
-				n := NewNode(h, "", 0)
+				n := NewNode("", 0)
 				n.Get("/test", newSimpleHandler("h1"))
 				n.Get("/test", newSimpleHandler("h2"))
 			})
 		})
 		convey.Convey("Test regexp path", func() {
-			n := NewNode(h, "", 0)
-			n.Get(`/(?P<name>\w+)`, newSimpleHandler("h1"))
-			n.Get(`/(?P<name>\w+)/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
+			n := NewNode("", 0)
+			n.Get(`/{name:\w+}`, newSimpleHandler("h1"))
+			n.Get(`/{name:\w+}/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
 			convey.Convey("/jack", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/jack", nil)
@@ -168,12 +166,12 @@ func TestNode(t *testing.T) {
 				convey.So(resp.Body.String(), convey.ShouldEqual, "h2")
 			})
 		})
-		convey.Convey("Test Before", func() {
-			n := NewNode(h, "", 0)
+		convey.Convey("Test Filter", func() {
+			n := NewNode("", 0)
 			n.Get("/a", newSimpleHandler("h1"))
-			n.Get("/a/b", newSimpleHandler("h2")).BeforeFunc(func(ctx *Context, next Handler) {
+			n.Get("/a/b", newSimpleHandler("h2"), FilterFunc(func(ctx *Context, next Handler) {
 				ctx.Response.Write([]byte("Filter"))
-			})
+			}))
 			convey.Convey("test /a", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/a", nil)
@@ -189,14 +187,14 @@ func TestNode(t *testing.T) {
 				convey.So(resp.Body.String(), convey.ShouldEqual, "Filter")
 			})
 		})
-		convey.Convey("Test Before with Group", func() {
-			n := NewNode(h, "", 0)
+		convey.Convey("Test FilteFilter with Group", func() {
+			n := NewNode("", 0)
 			n.Group("/a", func(r Router) {
 				r.Get("/b", newSimpleHandler("h1"))
 				r.Get("/c", newSimpleHandler("h2"))
-			}).BeforeFunc(func(ctx *Context, next Handler) {
+			}, FilterFunc(func(ctx *Context, next Handler) {
 				ctx.Response.Write([]byte("Filter"))
-			})
+			}))
 			convey.Convey("test /a/b", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/a/b", nil)
@@ -213,7 +211,7 @@ func TestNode(t *testing.T) {
 			})
 		})
 		convey.Convey("Test error", func() {
-			n := NewNode(h, "", 0)
+			n := NewNode("", 0)
 			n.Get("/a", newSimpleHandler("GET"))
 			convey.Convey("test GET /a", func() {
 				resp := httptest.NewRecorder()
@@ -236,6 +234,15 @@ func TestNode(t *testing.T) {
 				n.Serve(ctx)
 				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
 			})
+		})
+		convey.Convey("Test Path", func() {
+			n := NewNode("", 0)
+			l := n.Get("/", newSimpleHandler("GET"))
+			l1 := n.Get("/a/b/c/d", newSimpleHandler("GET"))
+			l2 := n.Get("/a/(?P<name>.+)", newSimpleHandler("GET"))
+			convey.So(l.Path(), convey.ShouldEqual, "/")
+			convey.So(l1.Path(), convey.ShouldEqual, "/a/b/c/d")
+			convey.So(l2.Path(), convey.ShouldEqual, "/a/{name}")
 		})
 	})
 }

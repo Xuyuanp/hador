@@ -22,8 +22,8 @@ import (
 )
 
 // NewLogFilter new a Filter to log each request details
-func NewLogFilter(logger Logger) Filter {
-	return FilterFunc(func(ctx *Context, next Handler) {
+func NewLogFilter(logger Logger) FilterFunc {
+	return func(ctx *Context, next Handler) {
 		start := time.Now()
 		req := ctx.Request
 		addr := req.Header.Get("X-Real-IP")
@@ -56,5 +56,5 @@ func NewLogFilter(logger Logger) Filter {
 		} else {
 			logger.Debug("Completed %d %s in %v", status, statusText, duration)
 		}
-	})
+	}
 }

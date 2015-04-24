@@ -1,5 +1,6 @@
 /*
- * Copyright 2014 Xuyuan Pang <xuyuanp # gmail dot com>
+ * Copyright 2015 Xuyuan Pang
+ * Author: Xuyuan Pang
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +15,19 @@
  * limitations under the License.
  */
 
-package hador
+package swagger
 
-import "net/http"
+// Config struct
+type Config struct {
+	// UIFilePath is the location of folder containing swagger-ui index.html file. e.g. swagger-ui/dist
+	UIFilePath string
 
-// Request struct
-type Request struct {
-	*http.Request
-	segments []string
-}
+	// UIPrefx is the path where swagger-ui whill be served. e.g. /apidocs
+	UIPrefix string
 
-// NewRequest creates Request instance
-func NewRequest(req *http.Request) *Request {
-	return &Request{
-		Request:  req,
-		segments: genSegments(req.URL.Path),
-	}
+	// APIPath is the path where JSON API is available. e.g. /apidocs.json
+	APIPath string
+
+	// SelfDocEnabled enable the swagger-ui path API in doc. False on default.
+	SelfDocEnabled bool
 }
