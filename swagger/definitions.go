@@ -168,6 +168,14 @@ func (d Definitions) buildArrayProperty(field reflect.StructField, jsonName, mod
 			Format: d.jsonSchemaFormat(elem.Name()),
 		}
 	}
+	if elem.Kind() == reflect.Struct {
+		d.addModel(elem, "")
+		prop.Items = &Items{
+			Reference: Reference{
+				Ref: "#/definitions/" + elem.Name(),
+			},
+		}
+	}
 	return
 }
 
