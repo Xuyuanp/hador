@@ -18,7 +18,6 @@
 package swagger
 
 import (
-	"encoding/json"
 	"reflect"
 	"strings"
 )
@@ -32,21 +31,20 @@ func (d Definitions) AddModelFrom(model interface{}) {
 }
 
 func (d Definitions) addModel(st reflect.Type, nameOverride string) *Schema {
-	modelName := st.Name()
+	if st.Kind() == reflect.Ptr || st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
+		return d.addModel(st.Elem(), nameOverride)
+	}
+
+	modelName := st.String()
 	if nameOverride != "" {
 		modelName = nameOverride
 	}
-
-	if d.isPrimitiveType(modelName) {
+	if modelName == "" {
 		return nil
 	}
 
-	if _, ok := d[modelName]; ok {
-		return nil
-	}
-
-	if st.Kind() == reflect.Slice || st.Kind() == reflect.Array {
-		return d.addModel(st.Elem(), "")
+	if schema, ok := d[modelName]; ok {
+		return &schema
 	}
 
 	if st.Kind() != reflect.Struct {
@@ -54,8 +52,8 @@ func (d Definitions) addModel(st reflect.Type, nameOverride string) *Schema {
 	}
 
 	schema := Schema{
-		Required:   []string{},
 		Properties: map[string]Items{},
+		Required:   []string{},
 	}
 
 	d[modelName] = schema
@@ -63,14 +61,14 @@ func (d Definitions) addModel(st reflect.Type, nameOverride string) *Schema {
 	for i := 0; i < st.NumField(); i++ {
 		field := st.Field(i)
 		if field.Anonymous {
-			nestedSchema, ok := d[field.Type.Name()]
+			nestedSchema, ok := d[field.Type.String()]
 			if !ok {
 				nestedSchema = *d.addModel(field.Type, "")
 			}
 			d.mergeSchema(&schema, &nestedSchema)
 			continue
 		}
-		jsonName, prop := d.buildProperty(field, &schema, modelName)
+		jsonName, prop := d.buildProperty(field, "")
 		if jsonName != "" {
 			if d.isPropertyRequired(field) {
 				schema.Required = append(schema.Required, jsonName)
@@ -84,17 +82,12 @@ func (d Definitions) addModel(st reflect.Type, nameOverride string) *Schema {
 	return &schema
 }
 
-func (d Definitions) buildProperty(field reflect.StructField, schema *Schema, modelName string) (jsonName string, prop Items) {
+func (d Definitions) buildProperty(field reflect.StructField, nameOverride string) (jsonName string, prop Items) {
 	jsonName = d.jsonNameOfField(field)
-	if len(jsonName) == 0 {
-		return
+	if nameOverride != "" {
+		jsonName = nameOverride
 	}
-	fieldType := field.Type
-
-	marshalerType := reflect.TypeOf((*json.Marshaler)(nil)).Elem()
-	if fieldType.Implements(marshalerType) {
-		prop.Type = "string"
-		prop.Format = d.jsonSchemaFormat(fieldType.String())
+	if jsonName == "" {
 		return
 	}
 
@@ -106,81 +99,32 @@ func (d Definitions) buildProperty(field reflect.StructField, schema *Schema, mo
 		}
 	}
 
-	if d.isPrimitiveType(fieldType.String()) {
-		prop.Type = d.jsonSchemaType(fieldType.String())
-		prop.Format = d.jsonSchemaFormat(fieldType.String())
+	prop = d.buildFieldType(field.Type)
+	return
+}
+
+func (d Definitions) buildFieldType(st reflect.Type) (prop Items) {
+	if d.isPrimitiveType(st.String()) {
+		prop.Type = d.jsonSchemaType(st.String())
+		prop.Format = d.jsonSchemaFormat(st.String())
 		return
 	}
-
-	switch fieldType.Kind() {
+	switch st.Kind() {
 	case reflect.Struct:
-		return d.buildStructProperty(field, jsonName, modelName)
+		d.addModel(st, "")
+		prop.Ref = "#/definitions/" + st.String()
 	case reflect.Slice, reflect.Array:
-		return d.buildArrayProperty(field, jsonName, modelName)
-	case reflect.Ptr:
-		return d.buildPointerProperty(field, jsonName, modelName)
-	case reflect.Map:
-		prop.Type = "any"
-		return
-	}
-	return
-}
-
-func (d Definitions) buildPointerProperty(field reflect.StructField, jsonName, modelName string) (pName string, prop Items) {
-	fieldType := field.Type
-	elem := fieldType.Elem()
-	if elem.Kind() == reflect.Slice || elem.Kind() == reflect.Array {
-		pName = jsonName
 		prop.Type = "array"
-
-		if d.isPrimitiveType(elem.Name()) {
-			prop.Items = &Items{
-				Type:   d.jsonSchemaType(elem.Name()),
-				Format: d.jsonSchemaFormat(elem.Name()),
-			}
-		}
-
-		return
-	}
-	pName = jsonName
-	pType := elem.Name()
-	prop.Ref = "#/definitions/" + pType
-	d.addModel(elem, pType)
-	return
-}
-
-func (d Definitions) buildStructProperty(field reflect.StructField, jsonName, modelName string) (sName string, prop Items) {
-	fieldType := field.Type
-	d.addModel(fieldType, "")
-	prop.Ref = "#/definitions/" + fieldType.Name()
-	sName = jsonName
-	return
-}
-
-func (d Definitions) buildArrayProperty(field reflect.StructField, jsonName, modelName string) (ajName string, prop Items) {
-	elem := field.Type.Elem()
-	ajName = jsonName
-	prop.Type = "array"
-
-	if d.isPrimitiveType(elem.Name()) {
-		prop.Items = &Items{
-			Type:   d.jsonSchemaType(elem.Name()),
-			Format: d.jsonSchemaFormat(elem.Name()),
-		}
-	}
-	if elem.Kind() == reflect.Struct {
-		d.addModel(elem, "")
-		prop.Items = &Items{
-			Reference: Reference{
-				Ref: "#/definitions/" + elem.Name(),
-			},
-		}
+		itemsprop := d.buildFieldType(st.Elem())
+		prop.Items = &itemsprop
+	case reflect.Ptr:
+		return d.buildFieldType(st.Elem())
 	}
 	return
 }
 
 func (d Definitions) isPrimitiveType(modelName string) bool {
-	return strings.Contains("uint8 uint16 uint32 uint64 int int8 int16 int32 int64 float32 float64 bool string byte rune time.Time", modelName)
+	return modelName != "" && strings.Contains("uint8 uint16 uint32 uint64 int int8 int16 int32 int64 float32 float64 bool string byte rune time.Time", modelName)
 }
 
 func (d Definitions) jsonNameOfField(field reflect.StructField) string {

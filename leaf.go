@@ -155,7 +155,7 @@ func (l *Leaf) DocResponseRef(code, desc, ref string) *Leaf {
 func (l *Leaf) DocResponseModel(code, desc string, model interface{}) *Leaf {
 	resp := swagger.Response{
 		Description: desc,
-		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: "#/definitions/" + reflect.TypeOf(model).Name()}},
+		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: "#/definitions/" + reflect.TypeOf(model).String()}},
 	}
 	l.DocResponse(code, resp)
 	return l
@@ -239,7 +239,7 @@ func (l *Leaf) DocBodyParameter(paramName, desc string, model interface{}, requi
 		In:          "body",
 		Description: desc,
 		Required:    required,
-		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: "#/definitions/" + reflect.TypeOf(model).Name()}},
+		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: "#/definitions/" + reflect.TypeOf(model).String()}},
 	}
 	l.DocParameter(param)
 	return l
