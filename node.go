@@ -101,6 +101,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 // Node struct
 type Node struct {
 	*FilterChain
+	h           *Hador
 	Parent      *Node
 	Depth       int
 	Segment     string
@@ -112,7 +113,7 @@ type Node struct {
 }
 
 // NewNode creates new Node instance.
-func NewNode(segment string, depth int) *Node {
+func NewNode(h *Hador, segment string, depth int) *Node {
 	var paramName string
 	var paramReg *regexp.Regexp
 	if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
@@ -130,6 +131,7 @@ func NewNode(segment string, depth int) *Node {
 		paramReg = regexp.MustCompile(splits[1])
 	}
 	n := &Node{
+		h:           h,
 		Segment:     segment,
 		Depth:       depth,
 		paramName:   paramName,
@@ -214,7 +216,7 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 			if _, ok := n.Leaves[method]; ok {
 				return n, nil, false
 			}
-			l := NewLeaf(method, handler)
+			l := NewLeaf(n.h, method, handler)
 			l.parent = n
 			l.path = n.Path()
 			n.Leaves[method] = l
@@ -230,7 +232,7 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 		if ne, ok := n.rawChildren[segment]; ok {
 			next = ne
 		} else {
-			next = NewNode(segment, n.Depth+1)
+			next = NewNode(n.h, segment, n.Depth+1)
 			n.rawChildren[segment] = next
 		}
 	} else {
@@ -242,7 +244,7 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 			}
 		}
 		if !found {
-			next = NewNode(segment, n.Depth+1)
+			next = NewNode(n.h, segment, n.Depth+1)
 			n.regChildren = append(n.regChildren, next)
 		}
 	}

@@ -39,7 +39,6 @@ type Hador struct {
 func New() *Hador {
 	h := &Hador{
 		Logger: defaultLogger,
-		root:   NewNode("", 0),
 		Document: &swagger.Document{
 			Swagger:     "2.0.0",
 			Definitions: swagger.Definitions{},
@@ -50,6 +49,7 @@ func New() *Hador {
 			Produces:    []string{},
 		},
 	}
+	h.root = NewNode(h, "", 0)
 	h.Router = h.root
 	h.FilterChain = NewFilterChain(h.Router)
 	return h

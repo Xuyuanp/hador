@@ -26,6 +26,7 @@ import (
 // Leaf struct
 type Leaf struct {
 	*FilterChain
+	h       *Hador
 	parent  *Node
 	path    string
 	handler Handler
@@ -36,8 +37,9 @@ type Leaf struct {
 }
 
 // NewLeaf creates new Leaf instance
-func NewLeaf(method string, handler Handler) *Leaf {
+func NewLeaf(h *Hador, method string, handler Handler) *Leaf {
 	l := &Leaf{
+		h:       h,
 		method:  method,
 		handler: handler,
 	}
@@ -153,6 +155,7 @@ func (l *Leaf) DocResponseRef(code, desc, ref string) *Leaf {
 
 // DocResponseModel sets response model of this route
 func (l *Leaf) DocResponseModel(code, desc string, model interface{}) *Leaf {
+	l.h.DocDefinition(model)
 	resp := swagger.Response{
 		Description: desc,
 		Schema:      &swagger.Schema{Reference: swagger.Reference{Ref: "#/definitions/" + reflect.TypeOf(model).String()}},
@@ -234,6 +237,7 @@ func (l *Leaf) DocBodyRefParameter(paramName, desc string, ref string, required 
 
 // DocBodyParameter set body model parameter of this route
 func (l *Leaf) DocBodyParameter(paramName, desc string, model interface{}, required bool) *Leaf {
+	l.h.DocDefinition(model)
 	param := swagger.Parameter{
 		Name:        paramName,
 		In:          "body",
