@@ -37,9 +37,11 @@ type Leaf struct {
 }
 
 // NewLeaf creates new Leaf instance
-func NewLeaf(h *Hador, method string, handler Handler) *Leaf {
+func NewLeaf(parent *Node, method string, handler Handler) *Leaf {
 	l := &Leaf{
-		h:       h,
+		h:       parent.h,
+		parent:  parent,
+		path:    parent.Path(),
 		method:  method,
 		handler: handler,
 	}
