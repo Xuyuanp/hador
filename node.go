@@ -84,7 +84,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 	} else {
 		for _, ne := range n.regChildren {
 			if ne.MatchRegexp(segment) {
-				ctx.Params[ne.paramName] = segment
+				ctx.Params()[ne.paramName] = segment
 				next = ne
 				break
 			}

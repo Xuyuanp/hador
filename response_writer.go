@@ -59,6 +59,13 @@ type responseWriter struct {
 	beforeFuncs []beforeFunc
 }
 
+func (rw *responseWriter) reset(w http.ResponseWriter) {
+	rw.ResponseWriter = w
+	rw.status = 0
+	rw.size = 0
+	rw.beforeFuncs = nil
+}
+
 func (rw *responseWriter) WriteHeader(s int) {
 	rw.callBefore()
 	rw.ResponseWriter.WriteHeader(s)

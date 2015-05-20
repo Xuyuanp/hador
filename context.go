@@ -24,54 +24,78 @@ import (
 
 // Context struct
 type Context struct {
-	Request       *http.Request
-	Response      ResponseWriter
-	Params        Params
-	ErrorHandlers map[int]Handler
-	data          map[string]interface{}
-	segments      []string
-	Logger        Logger
+	Request  *http.Request
+	Response ResponseWriter
+	params   Params
+
+	data     map[string]interface{}
+	segments []string
+	Logger   Logger
+
+	NotFoundHandler         Handler
+	MethodNotAllowedHandler func(ctx *Context, allows []string)
 }
 
-// NewContext creates new Context instance
-func NewContext(w http.ResponseWriter, req *http.Request, logger Logger) *Context {
+func newContext(logger Logger) *Context {
 	return &Context{
-		Request:       req,
-		Response:      NewResponseWriter(w),
-		Params:        make(Params),
-		ErrorHandlers: make(map[int]Handler),
-		data:          make(map[string]interface{}),
-		segments:      genSegments(req.URL.Path),
-		Logger:        logger,
+		Logger: logger,
+
+		NotFoundHandler: HandlerFunc(func(ctx *Context) {
+			http.NotFound(ctx.Response, ctx.Request)
+		}),
+		MethodNotAllowedHandler: func(ctx *Context, allows []string) {
+			ctx.Response.Header().Set("Allow", strings.Join(allows, ","))
+			http.Error(ctx.Response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		},
+	}
+}
+
+func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
+	ctx.Request = req
+	ctx.Response = w
+	ctx.params = nil
+	ctx.data = nil
+	ctx.segments = genSegments(req.URL.Path)
+
+	ctx.NotFoundHandler = HandlerFunc(func(ctx *Context) {
+		http.NotFound(ctx.Response, ctx.Request)
+	})
+	ctx.MethodNotAllowedHandler = func(ctx *Context, allows []string) {
+		ctx.Response.Header().Set("Allow", strings.Join(allows, ","))
+		http.Error(ctx.Response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
 
 // NotFound handles 404 error
 func (ctx *Context) NotFound() {
-	if h, ok := ctx.ErrorHandlers[http.StatusNotFound]; ok {
-		h.Serve(ctx)
-		return
-	}
-	http.NotFound(ctx.Response, ctx.Request)
+	ctx.NotFoundHandler.Serve(ctx)
 }
 
 // MethodNotAllowed handles 405 error
-func (ctx *Context) MethodNotAllowed(allow []string) {
-	ctx.Response.Header().Set("Allow", strings.Join(allow, ","))
-	if h, ok := ctx.ErrorHandlers[http.StatusMethodNotAllowed]; ok {
-		h.Serve(ctx)
-		return
+func (ctx *Context) MethodNotAllowed(allows []string) {
+	ctx.MethodNotAllowedHandler(ctx, allows)
+}
+
+func (ctx *Context) Params() Params {
+	if ctx.params == nil {
+		ctx.params = make(Params)
 	}
-	http.Error(ctx.Response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	return ctx.params
 }
 
 // Set saves data in the context
 func (ctx *Context) Set(key string, value interface{}) {
+	if ctx.data == nil {
+		ctx.data = make(map[string]interface{})
+	}
 	ctx.data[key] = value
 }
 
 // Get retrieves data from the context
 func (ctx *Context) Get(key string) interface{} {
+	if ctx.data == nil {
+		return nil
+	}
 	if v, ok := ctx.data[key]; ok {
 		return v
 	}
@@ -80,6 +104,9 @@ func (ctx *Context) Get(key string) interface{} {
 
 // GetOK retrieves data from the context, and returns (nil, false) if no data
 func (ctx *Context) GetOK(key string) (value interface{}, ok bool) {
+	if ctx.data == nil {
+		return nil, false
+	}
 	if v, ok := ctx.data[key]; ok {
 		return v, true
 	}
@@ -88,6 +115,9 @@ func (ctx *Context) GetOK(key string) (value interface{}, ok bool) {
 
 // Delete removes data from the context
 func (ctx *Context) Delete(key string) interface{} {
+	if ctx.data == nil {
+		return nil
+	}
 	if v, ok := ctx.data[key]; ok {
 		delete(ctx.data, key)
 		return v

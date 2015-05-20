@@ -61,7 +61,8 @@ func TestFilterChain(t *testing.T) {
 
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/", nil)
-				ctx := NewContext(resp, req, defaultLogger)
+				ctx := newContext(defaultLogger)
+				ctx.reset(NewResponseWriter(resp), req)
 				fc.Serve(ctx)
 				convey.Convey("response string should be f1f2handler", func() {
 					convey.So(resp.Body.String(), convey.ShouldEqual, "f1Beforef2Beforehandlerf2Afterf1After")

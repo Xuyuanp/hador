@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/go-hodor/hador/swagger"
 )
@@ -30,8 +31,12 @@ import (
 type Hador struct {
 	Router
 	*FilterChain
-	Logger   Logger
-	root     *Node
+	Logger Logger
+	root   *Node
+
+	ctxPool  sync.Pool
+	respPool sync.Pool
+
 	Document *swagger.Document
 }
 
@@ -52,6 +57,14 @@ func New() *Hador {
 	h.root = NewNode(h, "", 0)
 	h.Router = h.root
 	h.FilterChain = NewFilterChain(h.Router)
+
+	h.ctxPool.New = func() interface{} {
+		return newContext(h.Logger)
+	}
+	h.respPool.New = func() interface{} {
+		return NewResponseWriter(nil)
+	}
+
 	return h
 }
 
@@ -70,7 +83,14 @@ func (h *Hador) Run(addr string) error {
 }
 
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ctx := NewContext(w, req, h.Logger)
+	resp := h.respPool.Get().(*responseWriter)
+	resp.reset(w)
+	defer h.respPool.Put(resp)
+
+	ctx := h.ctxPool.Get().(*Context)
+	ctx.reset(resp, req)
+	defer h.ctxPool.Put(ctx)
+
 	h.Serve(ctx)
 }
 
