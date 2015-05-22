@@ -17,6 +17,8 @@
 
 package hador
 
+import "net/http"
+
 // Handler interface
 type Handler interface {
 	Serve(*Context)
@@ -28,4 +30,11 @@ type HandlerFunc func(ctx *Context)
 // Serve implements Handler interface by calling HandlerFunc function
 func (hf HandlerFunc) Serve(ctx *Context) {
 	hf(ctx)
+}
+
+// Wrap wraps http.Handler to Handler
+func Wrap(handler http.Handler) HandlerFunc {
+	return func(ctx *Context) {
+		handler.ServeHTTP(ctx.Response, ctx.Request)
+	}
 }
