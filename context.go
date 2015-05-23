@@ -76,6 +76,7 @@ func (ctx *Context) MethodNotAllowed(allows []string) {
 	ctx.MethodNotAllowedHandler(ctx, allows)
 }
 
+// Params returns params lazy-init
 func (ctx *Context) Params() Params {
 	if ctx.params == nil {
 		ctx.params = make(Params)

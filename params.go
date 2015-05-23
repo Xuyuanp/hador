@@ -22,7 +22,7 @@ import (
 )
 
 // Params is a wrapper of map[string]string to handle the params in regexp pattern.
-// If the handler's URL pattern is "/api/(?P<name>\w+)/(?P<age>\d+)" and the request URL is
+// If the handler's URL pattern is "/api/(?P<name>\w+)/{age:\d+}" and the request URL is
 // "/api/jack/12", the Params will be { "name": "jack", "age": "12" }.
 // Using `hodor.GetParams(req)` to get the Params.
 type Params map[string]string
@@ -64,6 +64,7 @@ func (params Params) GetIntMust(key string, def int) int {
 	return def
 }
 
+// GetUint gets params with key in uint format
 func (params Params) GetUint(key string) (uint, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 64)
@@ -75,6 +76,7 @@ func (params Params) GetUint(key string) (uint, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetUintMust gets params with key in uint format
 func (params Params) GetUintMust(key string, def uint) uint {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 64)
@@ -86,6 +88,7 @@ func (params Params) GetUintMust(key string, def uint) uint {
 	return def
 }
 
+// GetInt8 gets params with key in int8 format
 func (params Params) GetInt8(key string) (int8, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 8)
@@ -97,6 +100,7 @@ func (params Params) GetInt8(key string) (int8, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetInt8Must gets params with key in int8 format
 func (params Params) GetInt8Must(key string, def int8) int8 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 8)
@@ -108,6 +112,7 @@ func (params Params) GetInt8Must(key string, def int8) int8 {
 	return def
 }
 
+// GetInt16 gets params with key in int16 format
 func (params Params) GetInt16(key string) (int16, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 16)
@@ -119,6 +124,7 @@ func (params Params) GetInt16(key string) (int16, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetInt16Must gets params with key in int16 format
 func (params Params) GetInt16Must(key string, def int16) int16 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 16)
@@ -130,6 +136,7 @@ func (params Params) GetInt16Must(key string, def int16) int16 {
 	return def
 }
 
+// GetInt32 gets params with key in int32 format
 func (params Params) GetInt32(key string) (int32, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 32)
@@ -141,6 +148,7 @@ func (params Params) GetInt32(key string) (int32, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetInt32Must gets params with key in int32 format
 func (params Params) GetInt32Must(key string, def int32) int32 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 32)
@@ -152,6 +160,7 @@ func (params Params) GetInt32Must(key string, def int32) int32 {
 	return def
 }
 
+// GetInt64 gets params with key in int64 format
 func (params Params) GetInt64(key string) (int64, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 64)
@@ -163,6 +172,7 @@ func (params Params) GetInt64(key string) (int64, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetInt64Must gets params with key in int64 format
 func (params Params) GetInt64Must(key string, def int64) int64 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseInt(value, 10, 64)
@@ -174,6 +184,7 @@ func (params Params) GetInt64Must(key string, def int64) int64 {
 	return def
 }
 
+// GetUint8 gets params with key in uint8 format
 func (params Params) GetUint8(key string) (uint8, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 8)
@@ -185,6 +196,7 @@ func (params Params) GetUint8(key string) (uint8, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetUint8Must gets params with key in uint8 format
 func (params Params) GetUint8Must(key string, def uint8) uint8 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 8)
@@ -196,6 +208,7 @@ func (params Params) GetUint8Must(key string, def uint8) uint8 {
 	return def
 }
 
+// GetUint16 gets params with key in uint16 format
 func (params Params) GetUint16(key string) (uint16, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 16)
@@ -207,6 +220,7 @@ func (params Params) GetUint16(key string) (uint16, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetUint16Must gets params with key in uint16 format
 func (params Params) GetUint16Must(key string, def uint16) uint16 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 16)
@@ -218,6 +232,7 @@ func (params Params) GetUint16Must(key string, def uint16) uint16 {
 	return def
 }
 
+// GetUint32 gets params with key in uint32 format
 func (params Params) GetUint32(key string) (uint32, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 32)
@@ -229,6 +244,7 @@ func (params Params) GetUint32(key string) (uint32, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetUint32Must gets params with key in uint32 format
 func (params Params) GetUint32Must(key string, def uint32) uint32 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 32)
@@ -240,6 +256,7 @@ func (params Params) GetUint32Must(key string, def uint32) uint32 {
 	return def
 }
 
+// GetUint64 gets params with key in uint64 format
 func (params Params) GetUint64(key string) (uint64, error) {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 64)
@@ -251,6 +268,7 @@ func (params Params) GetUint64(key string) (uint64, error) {
 	return 0, fmt.Errorf("No key named %s", key)
 }
 
+// GetUint64Must gets params with key in uint64 format
 func (params Params) GetUint64Must(key string, def uint64) uint64 {
 	if value, ok := params[key]; ok {
 		nu, err := strconv.ParseUint(value, 10, 64)
@@ -262,6 +280,7 @@ func (params Params) GetUint64Must(key string, def uint64) uint64 {
 	return def
 }
 
+// GetBool gets params with key in boolean format
 func (params Params) GetBool(key string) (bool, error) {
 	if value, ok := params[key]; ok {
 		b, err := strconv.ParseBool(value)
@@ -270,6 +289,7 @@ func (params Params) GetBool(key string) (bool, error) {
 	return false, fmt.Errorf("No key named %s", key)
 }
 
+// GetBoolMust gets params with key in boolean format
 func (params Params) GetBoolMust(key string, def bool) bool {
 	if value, ok := params[key]; ok {
 		b, err := strconv.ParseBool(value)
@@ -281,6 +301,7 @@ func (params Params) GetBoolMust(key string, def bool) bool {
 	return def
 }
 
+// GetFloat32 gets params with key in float32 format
 func (params Params) GetFloat32(key string) (float32, error) {
 	if value, ok := params[key]; ok {
 		f, err := strconv.ParseFloat(value, 32)
@@ -292,6 +313,7 @@ func (params Params) GetFloat32(key string) (float32, error) {
 	return 0.0, fmt.Errorf("No key named %s", key)
 }
 
+// GetFloat32Must gets params with key in float32 format
 func (params Params) GetFloat32Must(key string, def float32) float32 {
 	if value, ok := params[key]; ok {
 		f, err := strconv.ParseFloat(value, 32)
@@ -303,6 +325,7 @@ func (params Params) GetFloat32Must(key string, def float32) float32 {
 	return def
 }
 
+// GetFloat64 gets params with key in float64 format
 func (params Params) GetFloat64(key string) (float64, error) {
 	if value, ok := params[key]; ok {
 		f, err := strconv.ParseFloat(value, 64)
@@ -311,6 +334,7 @@ func (params Params) GetFloat64(key string) (float64, error) {
 	return 0.0, fmt.Errorf("No key named %s", key)
 }
 
+// GetFloat64Must gets params with key in float64 format
 func (params Params) GetFloat64Must(key string, def float64) float64 {
 	if value, ok := params[key]; ok {
 		f, err := strconv.ParseFloat(value, 64)

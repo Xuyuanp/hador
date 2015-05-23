@@ -44,9 +44,8 @@ func (gr *HttpHeaderGuardRecorder) Header() http.Header {
 			clone[k] = v
 		}
 		return clone
-	} else {
-		return gr.ResponseRecorder.Header()
 	}
+	return gr.ResponseRecorder.Header()
 }
 
 func Test_AllowAll(t *testing.T) {

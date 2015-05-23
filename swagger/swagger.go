@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+// Package swagger provides swagger specification models
 package swagger
 
 // Security type
