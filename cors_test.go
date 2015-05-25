@@ -22,21 +22,21 @@ import (
 	"time"
 )
 
-type HttpHeaderGuardRecorder struct {
+type HTTPHeaderGuardRecorder struct {
 	*httptest.ResponseRecorder
 	savedHeaderMap http.Header
 }
 
-func NewRecorder() *HttpHeaderGuardRecorder {
-	return &HttpHeaderGuardRecorder{httptest.NewRecorder(), nil}
+func NewRecorder() *HTTPHeaderGuardRecorder {
+	return &HTTPHeaderGuardRecorder{httptest.NewRecorder(), nil}
 }
 
-func (gr *HttpHeaderGuardRecorder) WriteHeader(code int) {
+func (gr *HTTPHeaderGuardRecorder) WriteHeader(code int) {
 	gr.ResponseRecorder.WriteHeader(code)
 	gr.savedHeaderMap = gr.ResponseRecorder.Header()
 }
 
-func (gr *HttpHeaderGuardRecorder) Header() http.Header {
+func (gr *HTTPHeaderGuardRecorder) Header() http.Header {
 	if gr.savedHeaderMap != nil {
 		// headers were written. clone so we don't get updates
 		clone := make(http.Header)
