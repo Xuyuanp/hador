@@ -27,10 +27,10 @@ func NewRecoveryFilter(logger Logger) FilterFunc {
 	return func(ctx *Context, next Handler) {
 		defer func() {
 			if err := recover(); err != nil {
-				ctx.Response.WriteHeader(http.StatusInternalServerError)
 				stack := debug.Stack()
 				msg := fmt.Sprintf("PANIC: %s\n%s", err, stack)
 				logger.Critical(msg)
+				ctx.OnError(http.StatusInternalServerError)
 			}
 		}()
 

@@ -32,21 +32,12 @@ type Context struct {
 	segments []string
 	Logger   Logger
 
-	NotFoundHandler         Handler
-	MethodNotAllowedHandler func(ctx *Context, allows []string)
+	errHandlers map[int]Handler
 }
 
 func newContext(logger Logger) *Context {
 	return &Context{
 		Logger: logger,
-
-		NotFoundHandler: HandlerFunc(func(ctx *Context) {
-			http.NotFound(ctx.Response, ctx.Request)
-		}),
-		MethodNotAllowedHandler: func(ctx *Context, allows []string) {
-			ctx.Response.Header().Set("Allow", strings.Join(allows, ","))
-			http.Error(ctx.Response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		},
 	}
 }
 
@@ -55,25 +46,39 @@ func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.Response = w
 	ctx.params = nil
 	ctx.data = nil
+	ctx.errHandlers = nil
 	ctx.segments = genSegments(req.URL.Path)
+}
 
-	ctx.NotFoundHandler = HandlerFunc(func(ctx *Context) {
-		http.NotFound(ctx.Response, ctx.Request)
-	})
-	ctx.MethodNotAllowedHandler = func(ctx *Context, allows []string) {
-		ctx.Response.Header().Set("Allow", strings.Join(allows, ","))
-		http.Error(ctx.Response, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+// OnError handles http error
+func (ctx *Context) OnError(status int) {
+	// try to use custom error handler
+	if ctx.errHandlers != nil {
+		if h, ok := ctx.errHandlers[status]; ok {
+			h.Serve(ctx)
+			return
+		}
 	}
+
+	// use default http error
+	switch status {
+	case http.StatusMethodNotAllowed:
+		// set Allow header for 405
+		if allows, ok := ctx.Get("allows").([]string); ok {
+			ctx.Response.Header().Set("Allow", strings.Join(allows, ","))
+		}
+	}
+	http.Error(ctx.Response,
+		http.StatusText(status),
+		status)
 }
 
-// NotFound handles 404 error
-func (ctx *Context) NotFound() {
-	ctx.NotFoundHandler.Serve(ctx)
-}
-
-// MethodNotAllowed handles 405 error
-func (ctx *Context) MethodNotAllowed(allows []string) {
-	ctx.MethodNotAllowedHandler(ctx, allows)
+// SetErrorHandler sets custom handler for each http error
+func (ctx *Context) SetErrorHandler(status int, handler Handler) {
+	if ctx.errHandlers == nil {
+		ctx.errHandlers = make(map[int]Handler)
+	}
+	ctx.errHandlers[status] = handler
 }
 
 // Params returns params lazy-init

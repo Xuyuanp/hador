@@ -19,6 +19,7 @@ package hador
 import (
 	"container/list"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 )
@@ -53,7 +54,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 	if len(segments) == n.Depth {
 		// 404 not found
 		if len(n.Leaves) == 0 {
-			ctx.NotFound()
+			ctx.OnError(http.StatusNotFound)
 			return
 		}
 		// method matches
@@ -73,7 +74,8 @@ func (d *dispatcher) Serve(ctx *Context) {
 			methods[i] = m
 			i++
 		}
-		ctx.MethodNotAllowed(methods)
+		ctx.Set("allows", methods)
+		ctx.OnError(http.StatusMethodNotAllowed)
 		return
 	}
 	// find next node
@@ -95,7 +97,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 		return
 	}
 	// 404 not found
-	ctx.NotFound()
+	ctx.OnError(http.StatusNotFound)
 }
 
 // Node struct
