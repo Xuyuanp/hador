@@ -74,7 +74,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 			methods[i] = m
 			i++
 		}
-		ctx.Set("allows", methods)
+		ctx.Set(AllowMethodsKey, methods)
 		ctx.OnError(http.StatusMethodNotAllowed)
 		return
 	}

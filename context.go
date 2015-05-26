@@ -22,6 +22,11 @@ import (
 	"strings"
 )
 
+const (
+	InternalErrorKey = "hador-error"
+	AllowMethodsKey  = "hador-allows"
+)
+
 // Context struct
 type Context struct {
 	Request  *http.Request
@@ -64,7 +69,7 @@ func (ctx *Context) OnError(status int) {
 	switch status {
 	case http.StatusMethodNotAllowed:
 		// set Allow header for 405
-		if allows, ok := ctx.Get("allows").([]string); ok {
+		if allows, ok := ctx.Get(AllowMethodsKey).([]string); ok && len(allows) > 0 {
 			ctx.Response.Header().Set("Allow", strings.Join(allows, ","))
 		}
 	}
