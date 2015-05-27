@@ -22,6 +22,7 @@ import (
 	"strings"
 )
 
+// keys in context
 const (
 	InternalErrorKey = "hador-error"
 	AllowMethodsKey  = "hador-allows"

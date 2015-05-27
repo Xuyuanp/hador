@@ -18,6 +18,7 @@
 package hador
 
 import (
+	"compress/flate"
 	"compress/gzip"
 	"io/ioutil"
 	"net/http"
@@ -44,14 +45,14 @@ func TestAcceptEncoding(t *testing.T) {
 			c6 AcceptEncoding = "*;q=0, gzip;q=0.2"
 			c7 AcceptEncoding = "gzip;q=0"
 		)
-		convey.So(c1.Accept("gzip"), convey.ShouldBeTrue)
-		convey.So(c2.Accept("gzip"), convey.ShouldBeTrue)
-		convey.So(c2.Accept("deflate"), convey.ShouldBeFalse)
-		convey.So(c3.Accept("gzip"), convey.ShouldBeTrue)
-		convey.So(c4.Accept("gzip"), convey.ShouldBeTrue)
-		convey.So(c5.Accept("gzip"), convey.ShouldBeFalse)
-		convey.So(c6.Accept("gzip"), convey.ShouldBeTrue)
-		convey.So(c7.Accept("gzip"), convey.ShouldBeFalse)
+		convey.So(c1.Accept(encodingTypeGZip), convey.ShouldBeTrue)
+		convey.So(c2.Accept(encodingTypeGZip), convey.ShouldBeTrue)
+		convey.So(c2.Accept(encodingTypeDeflate), convey.ShouldBeFalse)
+		convey.So(c3.Accept(encodingTypeGZip), convey.ShouldBeTrue)
+		convey.So(c4.Accept(encodingTypeGZip), convey.ShouldBeTrue)
+		convey.So(c5.Accept(encodingTypeGZip), convey.ShouldBeFalse)
+		convey.So(c6.Accept(encodingTypeGZip), convey.ShouldBeTrue)
+		convey.So(c7.Accept(encodingTypeGZip), convey.ShouldBeFalse)
 	})
 }
 
@@ -68,19 +69,55 @@ func TestGZipFilter(t *testing.T) {
 
 			h.ServeHTTP(resp, req)
 
-			convey.So(resp.Code, convey.ShouldEqual, 200)
+			convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
 			reader, err := gzip.NewReader(resp.Body)
 			convey.So(err, convey.ShouldBeNil)
 			body, err := ioutil.ReadAll(reader)
 			convey.So(err, convey.ShouldBeNil)
 			convey.So(string(body), convey.ShouldEqual, "gzip")
-			convey.So(resp.Header().Get("Content-Encoding"), convey.ShouldEqual, "gzip")
+			convey.So(resp.Header().Get(headerContentEncoding),
+				convey.ShouldEqual,
+				encodingTypeGZip)
 		})
 		convey.Convey("Test not accept", func() {
 			resp := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", "/foo", nil)
 			convey.So(err, convey.ShouldBeNil)
-			req.Header.Set("Accept-Encoding", "deflate")
+			req.Header.Set(headerAcceptEncoding, encodingTypeDeflate)
+
+			h.ServeHTTP(resp, req)
+
+			convey.So(resp.Code, convey.ShouldEqual, http.StatusNotAcceptable)
+		})
+	})
+}
+
+func TestDeflateFilter(t *testing.T) {
+	convey.Convey("Test GZipFilter", t, func() {
+		h := New()
+		h.Before(DeflateFilter(flate.DefaultCompression, true))
+		h.Get("/foo", newSimpleHandler("deflate"))
+
+		convey.Convey("Test accept", func() {
+			resp := httptest.NewRecorder()
+			req, err := http.NewRequest("GET", "/foo", nil)
+			req.Header.Set(headerAcceptEncoding, encodingTypeDeflate)
+			convey.So(err, convey.ShouldBeNil)
+
+			h.ServeHTTP(resp, req)
+
+			convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
+			reader := flate.NewReader(resp.Body)
+			convey.So(err, convey.ShouldBeNil)
+			body, err := ioutil.ReadAll(reader)
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(string(body), convey.ShouldEqual, "deflate")
+			convey.So(resp.Header().Get(headerContentEncoding), convey.ShouldEqual, encodingTypeDeflate)
+		})
+		convey.Convey("Test not accept", func() {
+			resp := httptest.NewRecorder()
+			req, err := http.NewRequest("GET", "/foo", nil)
+			convey.So(err, convey.ShouldBeNil)
 
 			h.ServeHTTP(resp, req)
 
