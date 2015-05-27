@@ -51,26 +51,26 @@ func (d *dispatcher) Serve(ctx *Context) {
 	n := d.node
 	segments := ctx.segments
 	// path matches
-	if len(segments) == n.Depth {
+	if len(segments) == n.depth {
 		// 404 not found
-		if len(n.Leaves) == 0 {
+		if len(n.leaves) == 0 {
 			ctx.OnError(http.StatusNotFound)
 			return
 		}
 		// method matches
-		if l, ok := n.Leaves[ctx.Request.Method]; ok {
+		if l, ok := n.leaves[ctx.Request.Method]; ok {
 			l.Serve(ctx)
 			return
 		}
 		// ANY matches
-		if l, ok := n.Leaves["ANY"]; ok {
+		if l, ok := n.leaves["ANY"]; ok {
 			l.Serve(ctx)
 			return
 		}
 		// 405 method not allowed
-		methods := make([]string, len(n.Leaves))
+		methods := make([]string, len(n.leaves))
 		i := 0
-		for m := range n.Leaves {
+		for m := range n.leaves {
 			methods[i] = m
 			i++
 		}
@@ -79,7 +79,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 		return
 	}
 	// find next node
-	segment := segments[n.Depth]
+	segment := segments[n.depth]
 	var next *Node
 	if ne, ok := n.rawChildren[segment]; ok {
 		next = ne
@@ -104,14 +104,14 @@ func (d *dispatcher) Serve(ctx *Context) {
 type Node struct {
 	*FilterChain
 	h           *Hador
-	Parent      *Node
-	Depth       int
-	Segment     string
+	parent      *Node
+	depth       int
+	segment     string
 	paramName   string
 	paramReg    *regexp.Regexp
 	rawChildren map[string]*Node
 	regChildren []*Node
-	Leaves      map[string]*Leaf
+	leaves      map[string]*Leaf
 }
 
 // NewNode creates new Node instance.
@@ -134,13 +134,13 @@ func NewNode(h *Hador, segment string, depth int) *Node {
 	}
 	n := &Node{
 		h:           h,
-		Segment:     segment,
-		Depth:       depth,
+		segment:     segment,
+		depth:       depth,
 		paramName:   paramName,
 		paramReg:    paramReg,
 		rawChildren: make(map[string]*Node),
 		regChildren: make([]*Node, 0),
-		Leaves:      make(map[string]*Leaf),
+		leaves:      make(map[string]*Leaf),
 	}
 	n.FilterChain = NewFilterChain(&dispatcher{node: n})
 	return n
@@ -215,11 +215,11 @@ func (n *Node) AddRoute(method, pattern string, handler Handler, filters ...Filt
 func (n *Node) add(segments []string, method string, handler Handler, filters ...Filter) (*Node, *Leaf, bool) {
 	if len(segments) == 0 {
 		if method != "" && handler != nil {
-			if _, ok := n.Leaves[method]; ok {
+			if _, ok := n.leaves[method]; ok {
 				return n, nil, false
 			}
 			l := NewLeaf(n, method, handler)
-			n.Leaves[method] = l
+			n.leaves[method] = l
 			l.AddFilters(filters...)
 			return n, l, true
 		}
@@ -232,23 +232,23 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 		if ne, ok := n.rawChildren[segment]; ok {
 			next = ne
 		} else {
-			next = NewNode(n.h, segment, n.Depth+1)
+			next = NewNode(n.h, segment, n.depth+1)
 			n.rawChildren[segment] = next
 		}
 	} else {
 		found := false
 		for _, next = range n.regChildren {
-			if next.Segment == segment {
+			if next.segment == segment {
 				found = true
 				break
 			}
 		}
 		if !found {
-			next = NewNode(n.h, segment, n.Depth+1)
+			next = NewNode(n.h, segment, n.depth+1)
 			n.regChildren = append(n.regChildren, next)
 		}
 	}
-	next.Parent = n
+	next.parent = n
 	return next.add(segments[1:], method, handler, filters...)
 }
 
@@ -262,21 +262,47 @@ func (n *Node) MatchRegexp(segment string) bool {
 
 // Path returns the full path from root to the node
 func (n *Node) Path() string {
-	if n.Parent == nil {
+	if n.parent == nil {
 		return "/"
 	}
-	ppath := n.Parent.Path()
+	ppath := n.parent.Path()
 	if ppath == "/" {
 		ppath = ""
 	}
 	if n.paramName != "" {
 		return ppath + "/{" + n.paramName + "}"
 	}
-	return ppath + "/" + n.Segment
+	return ppath + "/" + n.segment
+}
+
+// Parent returns the node's parent node
+func (n *Node) Parent() *Node {
+	return n.parent
+}
+
+// Depth returns the nodes' depth
+func (n *Node) Depth() int {
+	return n.depth
+}
+
+// Segment returns node's segment
+func (n *Node) Segment() string {
+	return n.segment
+}
+
+// Leaves returns all of node's leaves
+func (n *Node) Leaves() []*Leaf {
+	leaves := make([]*Leaf, len(n.leaves))
+	i := 0
+	for _, l := range n.leaves {
+		leaves[i] = l
+		i++
+	}
+	return leaves
 }
 
 func (n *Node) travel(llist *list.List) {
-	for _, l := range n.Leaves {
+	for _, l := range n.leaves {
 		llist.PushBack(l)
 	}
 	for _, child := range n.rawChildren {
