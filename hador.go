@@ -24,7 +24,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-hodor/hador/swagger"
+	"github.com/Xuyuanp/hador/swagger"
 )
 
 // Hador struct

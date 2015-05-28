@@ -20,7 +20,7 @@ package hador
 import (
 	"reflect"
 
-	"github.com/go-hodor/hador/swagger"
+	"github.com/Xuyuanp/hador/swagger"
 )
 
 // Leaf struct
