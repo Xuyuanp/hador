@@ -99,6 +99,12 @@ func (h *Hador) Serve(ctx *Context) {
 	h.FilterChain.Serve(ctx)
 }
 
+// AddFilters reuses FilterChain's AddFilters method and returns self
+func (h *Hador) AddFilters(filters ...Filter) *Hador {
+	h.FilterChain.AddFilters(filters...)
+	return h
+}
+
 func (h *Hador) travel() []*Leaf {
 	llist := list.New()
 	h.root.travel(llist)
