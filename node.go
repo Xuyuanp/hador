@@ -74,8 +74,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 			methods[i] = m
 			i++
 		}
-		ctx.Set(AllowMethodsKey, methods)
-		ctx.OnError(http.StatusMethodNotAllowed)
+		ctx.OnError(http.StatusMethodNotAllowed, methods)
 		return
 	}
 	// find next node

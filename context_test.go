@@ -67,10 +67,10 @@ func TestContext(t *testing.T) {
 				convey.So(err, convey.ShouldBeNil)
 				rw := NewResponseWriter(resp)
 				ctx.reset(rw, req)
-				ctx.SetErrorHandler(http.StatusNotFound, HandlerFunc(func(c *Context) {
-					c.Response.WriteHeader(http.StatusNotFound)
-					c.Response.Write([]byte("404"))
-				}))
+				ctx.SetErrorHandler(http.StatusNotFound, func(...interface{}) {
+					ctx.Response.WriteHeader(http.StatusNotFound)
+					ctx.Response.Write([]byte("404"))
+				})
 				ctx.OnError(http.StatusNotFound)
 				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
 				convey.So(resp.Body.String(), convey.ShouldEqual, "404")

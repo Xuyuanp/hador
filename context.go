@@ -22,12 +22,6 @@ import (
 	"strings"
 )
 
-// keys in context
-const (
-	InternalErrorKey = "hador-error"
-	AllowMethodsKey  = "hador-allows"
-)
-
 // Context struct
 type Context struct {
 	Request  *http.Request
@@ -38,7 +32,7 @@ type Context struct {
 	segments []string
 	Logger   Logger
 
-	errHandlers map[int]Handler
+	errHandlers map[int]func(...interface{})
 }
 
 func newContext(logger Logger) *Context {
@@ -57,11 +51,11 @@ func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 }
 
 // OnError handles http error
-func (ctx *Context) OnError(status int) {
+func (ctx *Context) OnError(status int, args ...interface{}) {
 	// try to use custom error handler
 	if ctx.errHandlers != nil {
 		if h, ok := ctx.errHandlers[status]; ok {
-			h.Serve(ctx)
+			h(args...)
 			return
 		}
 	}
@@ -70,19 +64,20 @@ func (ctx *Context) OnError(status int) {
 	switch status {
 	case http.StatusMethodNotAllowed:
 		// set Allow header for 405
-		if allows, ok := ctx.Get(AllowMethodsKey).([]string); ok && len(allows) > 0 {
-			ctx.Response.Header().Set("Allow", strings.Join(allows, ","))
+		if len(args) > 0 {
+			if allows, ok := args[0].([]string); ok && len(allows) > 0 {
+				ctx.Response.Header().Set("Allow",
+					strings.Join(allows, ","))
+			}
 		}
 	}
-	http.Error(ctx.Response,
-		http.StatusText(status),
-		status)
+	http.Error(ctx.Response, http.StatusText(status), status)
 }
 
 // SetErrorHandler sets custom handler for each http error
-func (ctx *Context) SetErrorHandler(status int, handler Handler) {
+func (ctx *Context) SetErrorHandler(status int, handler func(...interface{})) {
 	if ctx.errHandlers == nil {
-		ctx.errHandlers = make(map[int]Handler)
+		ctx.errHandlers = make(map[int]func(...interface{}))
 	}
 	ctx.errHandlers[status] = handler
 }
