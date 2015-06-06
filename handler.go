@@ -39,6 +39,7 @@ func Wrap(handler http.Handler) HandlerFunc {
 	}
 }
 
+// WrapFunc wraps http.HandlerFunc to HandlerFunc
 func WrapFunc(hf func(http.ResponseWriter, *http.Request)) HandlerFunc {
 	return func(ctx *Context) {
 		hf(ctx.Response, ctx.Request)
