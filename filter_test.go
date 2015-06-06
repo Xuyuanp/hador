@@ -69,5 +69,20 @@ func TestFilterChain(t *testing.T) {
 				})
 			})
 		})
+
+		convey.Convey("Test CombineFilters", func() {
+			fs := CombineFilters(f1, f2)
+			convey.Convey("Test Before", func() {
+
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/", nil)
+				ctx := newContext(defaultLogger)
+				ctx.reset(NewResponseWriter(resp), req)
+				fs.Filter(ctx, h)
+				convey.Convey("response string should be f1f2handler", func() {
+					convey.So(resp.Body.String(), convey.ShouldEqual, "f1Beforef2Beforehandlerf2Afterf1After")
+				})
+			})
+		})
 	})
 }

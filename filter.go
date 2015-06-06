@@ -36,7 +36,39 @@ type Beforer interface {
 	BeforeFunc(func(*Context, Handler)) Beforer
 }
 
-// FilterChain struct
+type filterHandler struct {
+	handler Handler
+	filter  Filter
+}
+
+func (fh *filterHandler) Serve(ctx *Context) {
+	fh.filter.Filter(ctx, fh.handler)
+}
+
+// CombineFilters combines multi Filters into a single Filter.
+func CombineFilters(first Filter, others ...Filter) Filter {
+	if others == nil || len(others) == 0 {
+		return fixNilFilter(first)
+	}
+	fh := &filterHandler{
+		filter: CombineFilters(others[0], others[1:]...),
+	}
+	return FilterFunc(func(ctx *Context, next Handler) {
+		fh.handler = next
+		first.Filter(ctx, fh)
+	})
+}
+
+func fixNilFilter(filter Filter) Filter {
+	if filter == nil {
+		return FilterFunc(func(ctx *Context, next Handler) {
+			next.Serve(ctx)
+		})
+	}
+	return filter
+}
+
+// FilterChain struct combines multi Filters and Handler into a single Handler.
 type FilterChain struct {
 	handler Handler
 	filter  Filter
