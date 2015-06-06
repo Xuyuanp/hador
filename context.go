@@ -50,7 +50,8 @@ func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.segments = genSegments(req.URL.Path)
 }
 
-// OnError handles http error
+// OnError handles http error by calling handler registered in SetErrorHandler methods.
+// If no handler registered with this status and noting written yet, http.Error would be used.
 func (ctx *Context) OnError(status int, args ...interface{}) {
 	// try to use custom error handler
 	if ctx.errHandlers != nil {
@@ -71,7 +72,9 @@ func (ctx *Context) OnError(status int, args ...interface{}) {
 			}
 		}
 	}
-	http.Error(ctx.Response, http.StatusText(status), status)
+	if !ctx.Response.Written() {
+		http.Error(ctx.Response, http.StatusText(status), status)
+	}
 }
 
 // SetErrorHandler sets custom handler for each http error
