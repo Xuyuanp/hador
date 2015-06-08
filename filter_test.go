@@ -46,18 +46,24 @@ func TestFilterChain(t *testing.T) {
 				}()
 				NewFilterChain(nil)
 			})
-			convey.Convey("NewFilterChain with nil Filter should panic", func() {
-				defer func() {
-					convey.So(recover(), convey.ShouldNotBeNil)
-				}()
-				NewFilterChain(h, nil)
+		})
+		convey.Convey("Test FilterChain without Filter", func() {
+			fc := NewFilterChain(h)
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/", nil)
+			ctx := newContext(defaultLogger)
+			ctx.reset(NewResponseWriter(resp), req)
+			fc.Serve(ctx)
+			convey.Convey("response string should be handler", func() {
+				convey.So(resp.Body.String(), convey.ShouldEqual, "handler")
 			})
 		})
 		convey.Convey("NewFilterChain should not be nil", func() {
-			fc := NewFilterChain(h, f1)
+			fc := NewFilterChain(h)
 			convey.So(fc, convey.ShouldNotBeNil)
 			convey.Convey("Test Before", func() {
-				fc.Before(f2)
+				fc.Before(f1)
+				fc.BeforeFunc(f2)
 
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/", nil)
@@ -71,7 +77,7 @@ func TestFilterChain(t *testing.T) {
 		})
 
 		convey.Convey("Test CombineFilters", func() {
-			fs := CombineFilters(f1, f2)
+			fs := CombineFilters(f1, f2, nil)
 			convey.Convey("Test Before", func() {
 
 				resp := httptest.NewRecorder()

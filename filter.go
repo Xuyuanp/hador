@@ -36,43 +36,50 @@ type Beforer interface {
 	BeforeFunc(func(*Context, Handler)) Beforer
 }
 
-type filterHandler struct {
-	handler Handler
-	filter  Filter
-}
-
-func (fh *filterHandler) Serve(ctx *Context) {
-	fh.filter.Filter(ctx, fh.handler)
-}
-
 // CombineFilters combines multi Filters into a single Filter.
-func CombineFilters(first Filter, others ...Filter) Filter {
-	if others == nil || len(others) == 0 {
-		return fixNilFilter(first)
+func CombineFilters(filters ...Filter) Filter {
+	// if no Filter or Filters is nil return nil
+	if filters == nil || len(filters) == 0 {
+		return nil
 	}
-	fh := &filterHandler{
-		filter: CombineFilters(others[0], others[1:]...),
+	// if there is only one Filter, return itself
+	first := filters[0]
+	if len(filters) == 1 {
+		return first
+	}
+	second := CombineFilters(filters[1:]...)
+
+	return Combine2Filters(first, second)
+}
+
+// Combine2Filters combines 2 Filters into a single Filter.
+func Combine2Filters(first, second Filter) Filter {
+	// return the other if one is nil
+	// return nil if both are nil
+	if first == nil {
+		return second
+	}
+	if second == nil {
+		return first
 	}
 	return FilterFunc(func(ctx *Context, next Handler) {
-		fh.handler = next
-		first.Filter(ctx, fh)
+		first.Filter(ctx, filterHandler(second, next))
 	})
 }
 
-func fixNilFilter(filter Filter) Filter {
+func filterHandler(filter Filter, handler Handler) Handler {
 	if filter == nil {
-		return FilterFunc(func(ctx *Context, next Handler) {
-			next.Serve(ctx)
-		})
+		return handler
 	}
-	return filter
+	return HandlerFunc(func(ctx *Context) {
+		filter.Filter(ctx, handler)
+	})
 }
 
 // FilterChain struct combines multi Filters and Handler into a single Handler.
 type FilterChain struct {
 	handler Handler
 	filter  Filter
-	next    *FilterChain
 }
 
 // NewFilterChain creates new FilterChain instance
@@ -80,44 +87,20 @@ func NewFilterChain(handler Handler, filters ...Filter) *FilterChain {
 	if handler == nil {
 		panic("handler shouldn't be nil")
 	}
-	if len(filters) == 0 {
-		return &FilterChain{
-			handler: handler,
-		}
-	}
-	filter := filters[0]
-	if filter == nil {
-		panic("filter shouldn't be nil")
-	}
 	return &FilterChain{
-		filter: filter,
-		next:   NewFilterChain(handler, filters[1:]...),
+		handler: handler,
+		filter:  CombineFilters(filters...),
 	}
 }
 
 // Serve implements Handler interface
 func (fc *FilterChain) Serve(ctx *Context) {
-	if fc.handler != nil {
-		fc.handler.Serve(ctx)
-	} else {
-		fc.filter.Filter(ctx, fc.next)
-	}
+	filterHandler(fc.filter, fc.handler).Serve(ctx)
 }
 
 // Before implements Beforer interface
 func (fc *FilterChain) Before(filter Filter) Beforer {
-	if filter == nil {
-		return fc
-	}
-	tmp := fc
-	for tmp.next != nil {
-		tmp = tmp.next
-	}
-	tmp.next = &FilterChain{
-		handler: tmp.handler,
-	}
-	tmp.handler = nil
-	tmp.filter = filter
+	fc.filter = CombineFilters(fc.filter, filter)
 	return fc
 }
 
@@ -127,8 +110,7 @@ func (fc *FilterChain) BeforeFunc(f func(*Context, Handler)) Beforer {
 }
 
 // AddFilters adds all filters to chain
-func (fc *FilterChain) AddFilters(filters ...Filter) {
-	for _, filter := range filters {
-		fc.Before(filter)
-	}
+func (fc *FilterChain) AddFilters(filters ...Filter) *FilterChain {
+	fc.filter = CombineFilters(fc.filter, CombineFilters(filters...))
+	return fc
 }
