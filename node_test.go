@@ -162,8 +162,8 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test regexp path", func() {
 			n := NewNode(nil, "", 0)
-			n.Get(`/{name:\w+}`, newSimpleHandler("h1"))
-			n.Get(`/{name:\w+}/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
+			n.Get(`/{name}`, newSimpleHandler("h1"))
+			n.Get(`/{name}/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
 			convey.Convey("/jack", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/jack", nil)
@@ -179,6 +179,14 @@ func TestNode(t *testing.T) {
 				ctx.reset(NewResponseWriter(resp), req)
 				n.Serve(ctx)
 				convey.So(resp.Body.String(), convey.ShouldEqual, "h2")
+			})
+			convey.Convey("/jack/hi", func() {
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/jack/hi", nil)
+				ctx := newContext(defaultLogger)
+				ctx.reset(NewResponseWriter(resp), req)
+				n.Serve(ctx)
+				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
 			})
 		})
 		convey.Convey("Test Filter", func() {
@@ -231,18 +239,18 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test error", func() {
 			n := NewNode(nil, "", 0)
-			n.Get("/a", newSimpleHandler("GET"))
-			convey.Convey("test GET /a", func() {
+			n.Get("/a/b", newSimpleHandler("GET"))
+			convey.Convey("test GET /a/b", func() {
 				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a", nil)
+				req, _ := http.NewRequest("GET", "/a/b", nil)
 				ctx := newContext(defaultLogger)
 				ctx.reset(NewResponseWriter(resp), req)
 				n.Serve(ctx)
 				convey.So(resp.Body.String(), convey.ShouldEqual, "GET")
 			})
-			convey.Convey("test POST /a", func() {
+			convey.Convey("test POST /a/b", func() {
 				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("POST", "/a", nil)
+				req, _ := http.NewRequest("POST", "/a/b", nil)
 				ctx := newContext(defaultLogger)
 				ctx.reset(NewResponseWriter(resp), req)
 				n.Serve(ctx)
@@ -251,6 +259,14 @@ func TestNode(t *testing.T) {
 			convey.Convey("test GET /b", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/b", nil)
+				ctx := newContext(defaultLogger)
+				ctx.reset(NewResponseWriter(resp), req)
+				n.Serve(ctx)
+				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
+			})
+			convey.Convey("test GET /a", func() {
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/a", nil)
 				ctx := newContext(defaultLogger)
 				ctx.reset(NewResponseWriter(resp), req)
 				n.Serve(ctx)
