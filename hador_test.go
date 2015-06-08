@@ -36,10 +36,17 @@ func TestHodor(t *testing.T) {
 		convey.Convey("Run should not panic", func() {
 			go h.Run(":6789")
 		})
+		convey.Convey("Test basic use", func() {
+			h.Get("/hello", newSimpleHandler("hello"))
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/hello", nil)
+			h.ServeHTTP(resp, req)
+			convey.So(resp.Body.String(), convey.ShouldEqual, "hello")
+		})
 		convey.Convey("Test Before method", func() {
-			h.BeforeFunc(func(ctx *Context, next Handler) {
+			h.AddFilters(FilterFunc(func(ctx *Context, next Handler) {
 				ctx.Response.Write([]byte("before"))
-			})
+			}))
 			resp := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/", nil)
 			h.ServeHTTP(resp, req)
