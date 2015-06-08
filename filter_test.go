@@ -47,6 +47,28 @@ func TestFilterChain(t *testing.T) {
 				NewFilterChain(nil)
 			})
 		})
+		convey.Convey("Test Insert", func() {
+			convey.Convey("test InsertBefore", func() {
+				fc := NewFilterChain(h, f1)
+				fc.InsertBefore(f2)
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/", nil)
+				ctx := newContext(defaultLogger)
+				ctx.reset(NewResponseWriter(resp), req)
+				fc.Serve(ctx)
+				convey.So(resp.Body.String(), convey.ShouldEqual, "f2Beforef1Beforehandlerf1Afterf2After")
+			})
+			convey.Convey("test InsertAfter", func() {
+				fc := NewFilterChain(h, f1)
+				fc.InsertAfter(f2)
+				resp := httptest.NewRecorder()
+				req, _ := http.NewRequest("GET", "/", nil)
+				ctx := newContext(defaultLogger)
+				ctx.reset(NewResponseWriter(resp), req)
+				fc.Serve(ctx)
+				convey.So(resp.Body.String(), convey.ShouldEqual, "f1Beforef2Beforehandlerf2Afterf1After")
+			})
+		})
 		convey.Convey("Test FilterChain without Filter", func() {
 			fc := NewFilterChain(h)
 			resp := httptest.NewRecorder()

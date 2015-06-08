@@ -42,11 +42,12 @@ func CombineFilters(filters ...Filter) Filter {
 	if filters == nil || len(filters) == 0 {
 		return nil
 	}
-	// if there is only one Filter, return itself
+	// if the first Filter is the only, return itself
 	first := filters[0]
 	if len(filters) == 1 {
 		return first
 	}
+	// combine others as second Filter
 	second := CombineFilters(filters[1:]...)
 
 	return Combine2Filters(first, second)
@@ -100,7 +101,7 @@ func (fc *FilterChain) Serve(ctx *Context) {
 
 // Before implements Beforer interface
 func (fc *FilterChain) Before(filter Filter) Beforer {
-	fc.filter = CombineFilters(fc.filter, filter)
+	fc.filter = Combine2Filters(fc.filter, filter)
 	return fc
 }
 
@@ -110,7 +111,16 @@ func (fc *FilterChain) BeforeFunc(f func(*Context, Handler)) Beforer {
 }
 
 // AddFilters adds all filters to chain
-func (fc *FilterChain) AddFilters(filters ...Filter) *FilterChain {
-	fc.filter = CombineFilters(fc.filter, CombineFilters(filters...))
-	return fc
+func (fc *FilterChain) AddFilters(filters ...Filter) {
+	fc.filter = Combine2Filters(fc.filter, CombineFilters(filters...))
+}
+
+// InsertBefore insert filters before self
+func (fc *FilterChain) InsertBefore(filters ...Filter) {
+	fc.filter = Combine2Filters(CombineFilters(filters...), fc.filter)
+}
+
+// InsertAfter inserts filters after self
+func (fc *FilterChain) InsertAfter(filters ...Filter) {
+	fc.filter = Combine2Filters(fc.filter, CombineFilters(filters...))
 }
