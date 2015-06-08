@@ -115,22 +115,7 @@ type Node struct {
 
 // NewNode creates new Node instance.
 func NewNode(h *Hador, segment string, depth int) *Node {
-	var paramName string
-	var paramReg *regexp.Regexp
-	if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
-		seg := segment[1 : len(segment)-1]
-		splits := strings.SplitN(seg, ":", 2)
-		if len(splits) == 1 {
-			splits = append(splits, ".+")
-		}
-		paramName = splits[0]
-		paramReg = regexp.MustCompile(splits[1])
-	} else if regSegmentRegexp.MatchString(segment) {
-		seg := segment[4 : len(segment)-1]
-		splits := strings.SplitN(seg, ">", 2)
-		paramName = splits[0]
-		paramReg = regexp.MustCompile(splits[1])
-	}
+	paramName, paramReg := resolveSegment(segment)
 	n := &Node{
 		h:           h,
 		segment:     segment,
@@ -143,6 +128,32 @@ func NewNode(h *Hador, segment string, depth int) *Node {
 	}
 	n.FilterChain = NewFilterChain(&dispatcher{node: n})
 	return n
+}
+
+func resolveSegment(segment string) (paramName string, paramReg *regexp.Regexp) {
+	var splits []string
+	if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
+		seg := segment[1 : len(segment)-1]
+		splits = strings.SplitN(seg, ":", 2)
+		if len(splits) == 1 {
+			splits = append(splits, ".+")
+		}
+	} else if regSegmentRegexp.MatchString(segment) {
+		seg := segment[4 : len(segment)-1]
+		splits = strings.SplitN(seg, ">", 2)
+	}
+	if splits != nil && len(splits) == 2 {
+		paramName = splits[0]
+		regstr := splits[1]
+		if !strings.HasPrefix(regstr, "^") {
+			regstr = "^" + regstr
+		}
+		if !strings.HasSuffix(regstr, "$") {
+			regstr = regstr + "$"
+		}
+		paramReg = regexp.MustCompile(regstr)
+	}
+	return
 }
 
 // Options adds route by call AddRoute
