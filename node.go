@@ -52,48 +52,17 @@ func (d *dispatcher) Serve(ctx *Context) {
 	segments := ctx.segments
 	// path matches
 	if len(segments) == n.depth {
-		// 404 not found
-		if len(n.leaves) == 0 {
-			ctx.OnError(http.StatusNotFound)
-			return
-		}
-		// method matches
-		if l, ok := n.leaves[ctx.Request.Method]; ok {
-			l.Serve(ctx)
-			return
-		}
-		// ANY matches
-		if l, ok := n.leaves["ANY"]; ok {
-			l.Serve(ctx)
-			return
-		}
-		// 405 method not allowed
-		methods := make([]string, len(n.leaves))
-		i := 0
-		for m := range n.leaves {
-			methods[i] = m
-			i++
-		}
-		ctx.OnError(http.StatusMethodNotAllowed, methods)
+		n.doServe(ctx)
 		return
 	}
 	// find next node
 	segment := segments[n.depth]
-	var next *Node
-	if ne, ok := n.rawChildren[segment]; ok {
-		next = ne
-	} else {
-		for _, ne := range n.regChildren {
-			if ne.MatchRegexp(segment) {
-				ctx.Params()[ne.paramName] = segment
-				next = ne
-				break
-			}
-		}
-	}
+	next := n.findNext(segment)
 	if next != nil {
+		if next.paramReg != nil {
+			ctx.Params()[next.paramName] = segment
+		}
 		next.Serve(ctx)
-		return
 	}
 	// 404 not found
 	ctx.OnError(http.StatusNotFound)
@@ -225,19 +194,29 @@ func (n *Node) AddRoute(method, pattern string, handler Handler, filters ...Filt
 func (n *Node) add(segments []string, method string, handler Handler, filters ...Filter) (*Node, *Leaf, bool) {
 	if len(segments) == 0 {
 		if method != "" && handler != nil {
-			if _, ok := n.leaves[method]; ok {
-				return n, nil, false
-			}
-			l := NewLeaf(n, method, handler)
-			n.leaves[method] = l
-			l.AddFilters(filters...)
-			return n, l, true
+			l, ok := n.handle(method, handler, filters...)
+			return n, l, ok
 		}
 		n.AddFilters(filters...)
 		return n, nil, true
 	}
+
 	segment := segments[0]
-	var next *Node
+	next := n.findOrCreateNext(segment)
+	return next.add(segments[1:], method, handler, filters...)
+}
+
+func (n *Node) handle(method string, handler Handler, filters ...Filter) (l *Leaf, ok bool) {
+	if _, ok := n.leaves[method]; ok {
+		return nil, false
+	}
+	l = NewLeaf(n, method, handler)
+	n.leaves[method] = l
+	l.AddFilters(filters...)
+	return l, true
+}
+
+func (n *Node) findOrCreateNext(segment string) (next *Node) {
 	if !isReg(segment) {
 		if ne, ok := n.rawChildren[segment]; ok {
 			next = ne
@@ -259,7 +238,47 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 		}
 	}
 	next.parent = n
-	return next.add(segments[1:], method, handler, filters...)
+	return
+}
+
+func (n *Node) findNext(segment string) (next *Node) {
+	if ne, ok := n.rawChildren[segment]; ok {
+		next = ne
+	} else {
+		for _, ne := range n.regChildren {
+			if ne.MatchRegexp(segment) {
+				next = ne
+				break
+			}
+		}
+	}
+	return
+}
+
+func (n *Node) doServe(ctx *Context) {
+	// 404 not found
+	if len(n.leaves) == 0 {
+		ctx.OnError(http.StatusNotFound)
+		return
+	}
+	// method matches
+	if l, ok := n.leaves[ctx.Request.Method]; ok {
+		l.Serve(ctx)
+		return
+	}
+	// ANY matches
+	if l, ok := n.leaves["ANY"]; ok {
+		l.Serve(ctx)
+		return
+	}
+	// 405 method not allowed
+	methods := make([]string, len(n.leaves))
+	i := 0
+	for m := range n.leaves {
+		methods[i] = m
+		i++
+	}
+	ctx.OnError(http.StatusMethodNotAllowed, methods)
 }
 
 // MatchRegexp checks if the segment match regexp in node
