@@ -18,6 +18,8 @@
 package hador
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -85,6 +87,110 @@ func TestContext(t *testing.T) {
 				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
 				convey.So(resp.Body.String(), convey.ShouldEqual,
 					http.StatusText(http.StatusNotFound)+"\n")
+			})
+		})
+
+		convey.Convey("test WriteString", func() {
+			resp := httptest.NewRecorder()
+			req, err := http.NewRequest("GET", "/", nil)
+			convey.So(err, convey.ShouldBeNil)
+			rw := NewResponseWriter(resp)
+			ctx.reset(rw, req)
+
+			content := "foobar"
+			_, err = ctx.WriteString(content)
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(resp.Body.String(), convey.ShouldEqual, content)
+		})
+
+		convey.Convey("test render", func() {
+			type cv struct {
+				Foo string
+				Bar int
+			}
+			v := cv{
+				Foo: "blah",
+				Bar: 10,
+			}
+			jsondata, err := json.Marshal(v)
+			convey.So(err, convey.ShouldBeNil)
+			xmldata, err := xml.Marshal(v)
+			convey.So(err, convey.ShouldBeNil)
+
+			jsonindentdata, err := json.MarshalIndent(v, "", "\t")
+			convey.So(err, convey.ShouldBeNil)
+			xmlindentdata, err := xml.MarshalIndent(v, "", "\t")
+			convey.So(err, convey.ShouldBeNil)
+
+			convey.Convey("test RenderJSON", func() {
+				resp := httptest.NewRecorder()
+				req, err := http.NewRequest("GET", "/", nil)
+				convey.So(err, convey.ShouldBeNil)
+				rw := NewResponseWriter(resp)
+				ctx.reset(rw, req)
+
+				err = ctx.RenderJSON(v, 201)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.Code, convey.ShouldEqual, 201)
+				convey.So(resp.Header().Get("Content-Type"), convey.ShouldEqual,
+					"application/json; charset=utf-8")
+				convey.So(resp.Body.String(), convey.ShouldEqual, string(jsondata))
+			})
+			convey.Convey("test RenderPrettyJSON", func() {
+				resp := httptest.NewRecorder()
+				req, err := http.NewRequest("GET", "/", nil)
+				convey.So(err, convey.ShouldBeNil)
+				rw := NewResponseWriter(resp)
+				ctx.reset(rw, req)
+
+				err = ctx.RenderPrettyJSON(v)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.Code, convey.ShouldEqual, 200)
+				convey.So(resp.Header().Get("Content-Type"), convey.ShouldEqual,
+					"application/json; charset=utf-8")
+				convey.So(resp.Body.String(), convey.ShouldEqual, string(jsonindentdata))
+			})
+			convey.Convey("test RenderXML", func() {
+				resp := httptest.NewRecorder()
+				req, err := http.NewRequest("GET", "/", nil)
+				convey.So(err, convey.ShouldBeNil)
+				rw := NewResponseWriter(resp)
+				ctx.reset(rw, req)
+
+				err = ctx.RenderXML(v, 201)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.Code, convey.ShouldEqual, 201)
+				convey.So(resp.Header().Get("Content-Type"), convey.ShouldEqual,
+					"application/xml; charset=utf-8")
+				convey.So(resp.Body.String(), convey.ShouldEqual,
+					string(xmldata))
+
+				convey.Convey("test RenderXML error", func() {
+					resp := httptest.NewRecorder()
+					req, err := http.NewRequest("GET", "/", nil)
+					convey.So(err, convey.ShouldBeNil)
+					rw := NewResponseWriter(resp)
+					ctx.reset(rw, req)
+
+					v := map[string]string{}
+
+					err = ctx.RenderXML(v, 201)
+					convey.So(err, convey.ShouldNotBeNil)
+				})
+			})
+			convey.Convey("test RenderPrettyXML", func() {
+				resp := httptest.NewRecorder()
+				req, err := http.NewRequest("GET", "/", nil)
+				convey.So(err, convey.ShouldBeNil)
+				rw := NewResponseWriter(resp)
+				ctx.reset(rw, req)
+
+				err = ctx.RenderPrettyXML(v)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(resp.Code, convey.ShouldEqual, 200)
+				convey.So(resp.Header().Get("Content-Type"), convey.ShouldEqual,
+					"application/xml; charset=utf-8")
+				convey.So(resp.Body.String(), convey.ShouldEqual, string(xmlindentdata))
 			})
 		})
 	})

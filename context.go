@@ -18,6 +18,9 @@
 package hador
 
 import (
+	"encoding/json"
+	"encoding/xml"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -133,4 +136,87 @@ func (ctx *Context) Delete(key string) interface{} {
 		return v
 	}
 	return nil
+}
+
+// Write writes data into reponse by calling ctx.Response.Write method.
+func (ctx *Context) Write(p []byte) (n int, err error) {
+	return ctx.Response.Write(p)
+}
+
+// WriteStatus writes data into response by calling ctx.Response.Write method,
+// and sets status as provided, if multi status provided, the first one will be used,
+// if no status provided, does noting.
+func (ctx *Context) WriteStatus(p []byte, status ...int) (n int, err error) {
+	if status != nil && len(status) > 0 {
+		ctx.Response.WriteHeader(status[0])
+	}
+	return ctx.Write(p)
+}
+
+// WriteString writes string into response by calling ctx.Write method.
+func (ctx *Context) WriteString(s string) (n int, err error) {
+	return ctx.Write([]byte(s))
+}
+
+// RenderJSON renders v in JSON format and sets status if provided.
+func (ctx *Context) RenderJSON(v interface{}, status ...int) error {
+	return ctx.renderJSON(v, false, status...)
+}
+
+// RenderPrettyJSON renders v in pretty JSON format and sets status if provided.
+func (ctx *Context) RenderPrettyJSON(v interface{}, status ...int) error {
+	return ctx.renderJSON(v, true, status...)
+}
+
+func (ctx *Context) renderJSON(v interface{}, indent bool, status ...int) error {
+	charset := "utf-8"
+	ctype := fmt.Sprintf("application/json; charset=%s", charset)
+	return ctx.render(v, jsonMarshaler(indent), ctype, status...)
+}
+
+// RenderXML renders v in XML format and sets status if provided.
+func (ctx *Context) RenderXML(v interface{}, status ...int) error {
+	return ctx.renderXML(v, false, status...)
+}
+
+// RenderPrettyXML renders v in pretty XML format and sets status if provided.
+func (ctx *Context) RenderPrettyXML(v interface{}, status ...int) error {
+	return ctx.renderXML(v, true, status...)
+}
+
+func (ctx *Context) renderXML(v interface{}, indent bool, status ...int) error {
+	charset := "utf-8"
+	ctype := fmt.Sprintf("application/xml; charset=%s", charset)
+	return ctx.render(v, xmlMarshaler(indent), ctype, status...)
+}
+
+type marshaler func(interface{}) ([]byte, error)
+
+func jsonMarshaler(indent bool) marshaler {
+	return func(v interface{}) ([]byte, error) {
+		if indent {
+			return json.MarshalIndent(v, "", "\t")
+		}
+		return json.Marshal(v)
+	}
+}
+
+func xmlMarshaler(indent bool) marshaler {
+	return func(v interface{}) ([]byte, error) {
+		if indent {
+			return xml.MarshalIndent(v, "", "\t")
+		}
+		return xml.Marshal(v)
+	}
+}
+
+func (ctx *Context) render(v interface{}, m marshaler, ctype string, status ...int) error {
+	data, err := m(v)
+	if err != nil {
+		return err
+	}
+
+	ctx.Response.Header().Set("Content-Type", ctype)
+	_, err = ctx.WriteStatus(data, status...)
+	return err
 }
