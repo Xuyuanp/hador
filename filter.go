@@ -115,12 +115,12 @@ func (fc *FilterChain) AddFilters(filters ...Filter) {
 	fc.filter = Combine2Filters(fc.filter, CombineFilters(filters...))
 }
 
-// InsertBefore insert filters before self
-func (fc *FilterChain) InsertBefore(filters ...Filter) {
+// InsertAfter insert filters before self
+func (fc *FilterChain) InsertFront(filters ...Filter) {
 	fc.filter = Combine2Filters(CombineFilters(filters...), fc.filter)
 }
 
-// InsertAfter inserts filters after self
-func (fc *FilterChain) InsertAfter(filters ...Filter) {
+// InsertBack inserts filters after self
+func (fc *FilterChain) InsertBack(filters ...Filter) {
 	fc.filter = Combine2Filters(fc.filter, CombineFilters(filters...))
 }
