@@ -63,6 +63,7 @@ func (d *dispatcher) Serve(ctx *Context) {
 			ctx.Params()[next.paramName] = segment
 		}
 		next.Serve(ctx)
+		return
 	}
 	// 404 not found
 	ctx.OnError(http.StatusNotFound)
