@@ -35,7 +35,9 @@ type Context struct {
 	segments []string
 	Logger   Logger
 
-	errHandlers map[int]func(...interface{})
+	errHandlers   map[int]func(...interface{})
+	Err4XXHandler func(int, ...interface{})
+	Err5XXHandler func(int, ...interface{})
 }
 
 func newContext(logger Logger) *Context {
@@ -50,18 +52,33 @@ func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.params = nil
 	ctx.data = nil
 	ctx.errHandlers = nil
+	ctx.Err4XXHandler = nil
+	ctx.Err5XXHandler = nil
 	ctx.segments = genSegments(req.URL.Path)
 }
 
 // OnError handles http error by calling handler registered in SetErrorHandler methods.
 // If no handler registered with this status and noting written yet, http.Error would be used.
 func (ctx *Context) OnError(status int, args ...interface{}) {
+	// do nothing if not an error
+	if status < 400 {
+		return
+	}
 	// try to use custom error handler
 	if ctx.errHandlers != nil {
 		if h, ok := ctx.errHandlers[status]; ok {
 			h(args...)
 			return
 		}
+	}
+
+	if status >= 400 && status < 500 && ctx.Err4XXHandler != nil {
+		ctx.Err4XXHandler(status, args...)
+		return
+	}
+	if status >= 500 && ctx.Err5XXHandler != nil {
+		ctx.Err5XXHandler(status, args...)
+		return
 	}
 
 	// use default http error
@@ -72,11 +89,20 @@ func (ctx *Context) OnError(status int, args ...interface{}) {
 			if allows, ok := args[0].([]string); ok && len(allows) > 0 {
 				ctx.Response.Header().Set("Allow",
 					strings.Join(allows, ","))
+				args = args[1:]
 			}
 		}
 	}
 	if !ctx.Response.Written() {
-		http.Error(ctx.Response, http.StatusText(status), status)
+		text := http.StatusText(status)
+		if len(args) > 0 {
+			if len(args) == 1 {
+				text = fmt.Sprintf("%s", args[0])
+			} else {
+				text = fmt.Sprintf("%s", args)
+			}
+		}
+		http.Error(ctx.Response, text, status)
 	}
 }
 
