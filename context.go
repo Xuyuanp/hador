@@ -220,3 +220,11 @@ func (ctx *Context) render(v interface{}, m marshaler, ctype string, status ...i
 	_, err = ctx.WriteStatus(data, status...)
 	return err
 }
+
+func (ctx *Context) ResolveJSON(v interface{}) error {
+	return json.NewDecoder(ctx.Request.Body).Decode(v)
+}
+
+func (ctx *Context) ResolveXML(v interface{}) error {
+	return xml.NewDecoder(ctx.Request.Body).Decode(v)
+}
