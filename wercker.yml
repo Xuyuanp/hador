@@ -27,8 +27,11 @@ build:
     - setup-go-workspace
 
     # Gets the dependencies
-    go get -u github.com/smartystreets/goconvey/convey
-    go get -u github.com/hador-contrib/cors
+    - script:
+        name: go get
+        code: |
+          go get -u github.com/smartystreets/goconvey/convey
+          go get -u github.com/hador-contrib/cors
 
     # Build the project
     - script:
