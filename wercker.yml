@@ -39,5 +39,6 @@ build:
         name: go test
         code: |
           go get -u github.com/smartystreets/goconvey/convey
+          go get -u github.com/hador-contrib/cors
           go test ./...
 
