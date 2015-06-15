@@ -87,7 +87,7 @@ func (ctx *Context) OnError(status int, args ...interface{}) {
 		// set Allow header for 405
 		if len(args) > 0 {
 			if allows, ok := args[0].([]string); ok && len(allows) > 0 {
-				ctx.Response.Header().Set("Allow",
+				ctx.SetHeader("Allow",
 					strings.Join(allows, ","))
 				args = args[1:]
 			}
@@ -164,6 +164,16 @@ func (ctx *Context) Delete(key string) interface{} {
 	return nil
 }
 
+// SetHeader calls ctx.Response.Header().Set method
+func (ctx *Context) SetHeader(key, value string) {
+	ctx.Response.Header().Set(key, value)
+}
+
+// WriteHeader writes header  by calling ctx.Response.WriteHeader method
+func (ctx *Context) WriteHeader(status int) {
+	ctx.Response.WriteHeader(status)
+}
+
 // Write writes data into reponse by calling ctx.Response.Write method.
 func (ctx *Context) Write(p []byte) (n int, err error) {
 	return ctx.Response.Write(p)
@@ -174,7 +184,7 @@ func (ctx *Context) Write(p []byte) (n int, err error) {
 // if no status provided, does noting.
 func (ctx *Context) WriteStatus(p []byte, status ...int) (n int, err error) {
 	if status != nil && len(status) > 0 {
-		ctx.Response.WriteHeader(status[0])
+		ctx.WriteHeader(status[0])
 	}
 	return ctx.Write(p)
 }
@@ -242,7 +252,7 @@ func (ctx *Context) render(v interface{}, m marshaler, ctype string, status ...i
 		return err
 	}
 
-	ctx.Response.Header().Set("Content-Type", ctype)
+	ctx.SetHeader("Content-Type", ctype)
 	_, err = ctx.WriteStatus(data, status...)
 	return err
 }

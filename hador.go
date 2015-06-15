@@ -19,7 +19,6 @@ package hador
 
 import (
 	"container/list"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"sync"
@@ -141,8 +140,8 @@ func (h *Hador) travelPaths() swagger.Paths {
 func (h *Hador) SwaggerHandler() Handler {
 	return HandlerFunc(func(ctx *Context) {
 		h.Document.Paths = h.travelPaths()
-		ctx.Response.Header().Set("Content-Type", "application/json; charset-utf8")
-		json.NewEncoder(ctx.Response).Encode(h.Document)
+		ctx.SetHeader("Content-Type", "application/json; charset-utf8")
+		ctx.RenderJSON(h.Document)
 	})
 }
 

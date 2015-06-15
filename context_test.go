@@ -70,7 +70,7 @@ func TestContext(t *testing.T) {
 				rw := NewResponseWriter(resp)
 				ctx.reset(rw, req)
 				ctx.SetErrorHandler(http.StatusNotFound, func(...interface{}) {
-					ctx.Response.WriteHeader(http.StatusNotFound)
+					ctx.WriteHeader(http.StatusNotFound)
 					ctx.Response.Write([]byte("404"))
 				})
 				ctx.OnError(http.StatusNotFound)

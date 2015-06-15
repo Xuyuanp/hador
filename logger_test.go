@@ -37,19 +37,19 @@ func TestLogger(t *testing.T) {
 		convey.Convey("Should log messages", func() {
 			h.Before(NewLogFilter(logger))
 			h.Get("/500", HandlerFunc(func(ctx *Context) {
-				ctx.Response.WriteHeader(500)
+				ctx.WriteHeader(500)
 			}))
 			h.Get("/400", HandlerFunc(func(ctx *Context) {
-				ctx.Response.WriteHeader(400)
+				ctx.WriteHeader(400)
 			}))
 			h.Get("/300", HandlerFunc(func(ctx *Context) {
-				ctx.Response.WriteHeader(300)
+				ctx.WriteHeader(300)
 			}))
 			h.Get("/200", HandlerFunc(func(ctx *Context) {
-				ctx.Response.WriteHeader(200)
+				ctx.WriteHeader(200)
 			}))
 			h.Get("/100", HandlerFunc(func(ctx *Context) {
-				ctx.Response.WriteHeader(0)
+				ctx.WriteHeader(0)
 			}))
 			convey.Convey("Test log 500", func() {
 				resp := httptest.NewRecorder()
