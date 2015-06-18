@@ -18,6 +18,7 @@
 package hador
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
@@ -192,6 +193,40 @@ func TestContext(t *testing.T) {
 					"application/xml; charset=utf-8")
 				convey.So(resp.Body.String(), convey.ShouldEqual, string(xmlindentdata))
 			})
+			convey.Convey("test resolve methods", func() {
+				convey.Convey("test resolve json", func() {
+					jsonData, _ := json.Marshal(v)
+					r := bytes.NewReader(jsonData)
+					resp := httptest.NewRecorder()
+					req, err := http.NewRequest("POST", "/", r)
+					convey.So(err, convey.ShouldBeNil)
+					rw := NewResponseWriter(resp)
+					ctx.reset(rw, req)
+
+					j := cv{}
+					err = ctx.ResolveJSON(&j)
+					convey.So(err, convey.ShouldBeNil)
+					convey.So(j.Bar, convey.ShouldEqual, v.Bar)
+					convey.So(j.Foo, convey.ShouldEqual, v.Foo)
+				})
+				convey.Convey("test resolve xml", func() {
+					xmlData, _ := xml.Marshal(v)
+					r := bytes.NewReader(xmlData)
+					resp := httptest.NewRecorder()
+					req, err := http.NewRequest("POST", "/", r)
+					convey.So(err, convey.ShouldBeNil)
+					rw := NewResponseWriter(resp)
+					ctx.reset(rw, req)
+
+					x := cv{}
+					err = ctx.ResolveXML(&x)
+					convey.So(err, convey.ShouldBeNil)
+					convey.So(x.Bar, convey.ShouldEqual, v.Bar)
+					convey.So(x.Foo, convey.ShouldEqual, v.Foo)
+				})
+			})
+
 		})
+
 	})
 }
