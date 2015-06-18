@@ -28,7 +28,7 @@ func NewRecoveryFilter(logger Logger) FilterFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				stack := debug.Stack()
-				msg := fmt.Sprintf("PANIC: %s\n%s", err, stack)
+				msg := fmt.Sprintf("PANIC: %v\n%s", err, stack)
 				logger.Critical(msg)
 				ctx.OnError(http.StatusInternalServerError, err)
 			}

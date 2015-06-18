@@ -97,9 +97,9 @@ func (ctx *Context) OnError(status int, args ...interface{}) {
 		text := http.StatusText(status)
 		if len(args) > 0 {
 			if len(args) == 1 {
-				text = fmt.Sprintf("%s", args[0])
+				text = fmt.Sprintf("%v", args[0])
 			} else {
-				text = fmt.Sprintf("%s", args)
+				text = fmt.Sprintf("%v", args)
 			}
 		}
 		http.Error(ctx.Response, text, status)
