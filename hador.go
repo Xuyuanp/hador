@@ -81,6 +81,12 @@ func (h *Hador) Run(addr string) error {
 	return http.ListenAndServe(addr, h)
 }
 
+// RunTLS starts serving HTTPS request.
+func (h *Hador) RunTLS(addr, sertFile, keyFile string) error {
+	h.Logger.Info("Listening on %s", addr)
+	return http.ListenAndServeTLS(addr, sertFile, keyFile, h)
+}
+
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	resp := h.respPool.Get().(*responseWriter)
 	resp.reset(w)
