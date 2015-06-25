@@ -96,11 +96,7 @@ func (ctx *Context) OnError(status int, args ...interface{}) {
 	if !ctx.Response.Written() {
 		text := http.StatusText(status)
 		if len(args) > 0 {
-			if len(args) == 1 {
-				text = fmt.Sprintf("%v", args[0])
-			} else {
-				text = fmt.Sprintf("%v", args)
-			}
+			text = fmt.Sprint(args...)
 		}
 		http.Error(ctx.Response, text, status)
 	}
