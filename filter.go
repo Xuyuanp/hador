@@ -63,25 +63,28 @@ func Combine2Filters(first, second Filter) Filter {
 	if second == nil {
 		return first
 	}
+	nnext := &filterHandler{filter: second}
 	return FilterFunc(func(ctx *Context, next Handler) {
-		first.Filter(ctx, filterHandler(second, next))
+		nnext.handler = next
+		first.Filter(ctx, nnext)
 	})
 }
 
-func filterHandler(filter Filter, handler Handler) Handler {
-	if filter == nil {
-		return handler
+type filterHandler struct {
+	filter  Filter
+	handler Handler
+}
+
+func (fh *filterHandler) Serve(ctx *Context) {
+	if fh.filter == nil {
+		fh.handler.Serve(ctx)
+		return
 	}
-	return HandlerFunc(func(ctx *Context) {
-		filter.Filter(ctx, handler)
-	})
+	fh.filter.Filter(ctx, fh.handler)
 }
 
 // FilterChain struct combines multi Filters and Handler into a single Handler.
-type FilterChain struct {
-	handler Handler
-	filter  Filter
-}
+type FilterChain filterHandler
 
 // NewFilterChain creates new FilterChain instance
 func NewFilterChain(handler Handler, filters ...Filter) *FilterChain {
@@ -96,7 +99,11 @@ func NewFilterChain(handler Handler, filters ...Filter) *FilterChain {
 
 // Serve implements Handler interface
 func (fc *FilterChain) Serve(ctx *Context) {
-	filterHandler(fc.filter, fc.handler).Serve(ctx)
+	if fc.filter == nil {
+		fc.handler.Serve(ctx)
+		return
+	}
+	fc.filter.Filter(ctx, fc.handler)
 }
 
 // Before implements Beforer interface
@@ -115,7 +122,7 @@ func (fc *FilterChain) AddFilters(filters ...Filter) {
 	fc.filter = Combine2Filters(fc.filter, CombineFilters(filters...))
 }
 
-// InsertAfter insert filters before self
+// InsertFront insert filters before self
 func (fc *FilterChain) InsertFront(filters ...Filter) {
 	fc.filter = Combine2Filters(CombineFilters(filters...), fc.filter)
 }
