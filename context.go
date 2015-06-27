@@ -201,8 +201,7 @@ func (ctx *Context) RenderPrettyJSON(v interface{}, status ...int) error {
 }
 
 func (ctx *Context) renderJSON(v interface{}, indent bool, status ...int) error {
-	charset := "utf-8"
-	ctype := fmt.Sprintf("application/json; charset=%s", charset)
+	ctype := "application/json; charset=utf-8"
 	return ctx.render(v, jsonMarshaler(indent), ctype, status...)
 }
 
@@ -217,8 +216,7 @@ func (ctx *Context) RenderPrettyXML(v interface{}, status ...int) error {
 }
 
 func (ctx *Context) renderXML(v interface{}, indent bool, status ...int) error {
-	charset := "utf-8"
-	ctype := fmt.Sprintf("application/xml; charset=%s", charset)
+	ctype := "application/xml; charset=utf-8"
 	return ctx.render(v, xmlMarshaler(indent), ctype, status...)
 }
 
