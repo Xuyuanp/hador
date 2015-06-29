@@ -21,18 +21,18 @@ package hador
 type Router interface {
 	Handler
 
-	Options(string, interface{}, ...Filter) *Leaf
-	Get(string, interface{}, ...Filter) *Leaf
-	Head(string, interface{}, ...Filter) *Leaf
-	Post(string, interface{}, ...Filter) *Leaf
-	Put(string, interface{}, ...Filter) *Leaf
-	Delete(string, interface{}, ...Filter) *Leaf
-	Trace(string, interface{}, ...Filter) *Leaf
-	Connect(string, interface{}, ...Filter) *Leaf
-	Patch(string, interface{}, ...Filter) *Leaf
-	Any(string, interface{}, ...Filter) *Leaf
+	Options(method string, h interface{}, filters ...Filter) *Leaf
+	Get(method string, h interface{}, filters ...Filter) *Leaf
+	Head(method string, h interface{}, filters ...Filter) *Leaf
+	Post(method string, h interface{}, filters ...Filter) *Leaf
+	Put(method string, h interface{}, filters ...Filter) *Leaf
+	Delete(method string, h interface{}, filters ...Filter) *Leaf
+	Trace(method string, h interface{}, filters ...Filter) *Leaf
+	Connect(method string, h interface{}, filters ...Filter) *Leaf
+	Patch(method string, h interface{}, filters ...Filter) *Leaf
+	Any(method string, h interface{}, filters ...Filter) *Leaf
 
-	AddRoute(string, string, interface{}, ...Filter) *Leaf
+	AddRoute(path string, method string, h interface{}, filters ...Filter) *Leaf
 
-	Group(string, func(Router), ...Filter)
+	Group(path string, fn func(Router), filters ...Filter)
 }

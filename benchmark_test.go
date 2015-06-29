@@ -42,15 +42,22 @@ func Benchmark5Param(b *testing.B) {
 
 func BenchmarkFilters(b *testing.B) {
 	h := New()
-	h.Get("/ping", HandlerFunc(func(ctx *Context) {}),
+	h.AddFilters(
 		FilterFunc(func(ctx *Context, next Handler) { next.Serve(ctx) }),
 		FilterFunc(func(ctx *Context, next Handler) { next.Serve(ctx) }),
+	)
+	h.Group("/group", func(router Router) {
+		router.Get("/ping", HandlerFunc(func(ctx *Context) {}),
+			FilterFunc(func(ctx *Context, next Handler) { next.Serve(ctx) }),
+			FilterFunc(func(ctx *Context, next Handler) { next.Serve(ctx) }),
+		)
+	},
 		FilterFunc(func(ctx *Context, next Handler) { next.Serve(ctx) }),
 		FilterFunc(func(ctx *Context, next Handler) { next.Serve(ctx) }),
 		FilterFunc(func(ctx *Context, next Handler) { next.Serve(ctx) }),
 	)
 
-	runRequest(b, h, "GET", "/ping")
+	runRequest(b, h, "GET", "/group/ping")
 }
 
 func BenchmarkHTTPHandler(b *testing.B) {
