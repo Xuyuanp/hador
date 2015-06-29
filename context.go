@@ -251,10 +251,12 @@ func (ctx *Context) render(v interface{}, m marshaler, ctype string, status ...i
 	return err
 }
 
+// ResolveJSON resolve the request body into JSON format.
 func (ctx *Context) ResolveJSON(v interface{}) error {
 	return json.NewDecoder(ctx.Request.Body).Decode(v)
 }
 
+// ResolveXML resolve the request body into XML format.
 func (ctx *Context) ResolveXML(v interface{}) error {
 	return xml.NewDecoder(ctx.Request.Body).Decode(v)
 }
