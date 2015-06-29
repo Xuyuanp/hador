@@ -41,7 +41,21 @@ func Wrap(handler http.Handler) HandlerFunc {
 
 // WrapFunc wraps http.HandlerFunc to HandlerFunc
 func WrapFunc(hf func(http.ResponseWriter, *http.Request)) HandlerFunc {
-	return func(ctx *Context) {
-		hf(ctx.Response, ctx.Request)
+	return Wrap(http.HandlerFunc(hf))
+}
+
+func parseHandler(h interface{}) Handler {
+	switch v := h.(type) {
+	case Handler:
+		return v
+	case func(*Context):
+		return HandlerFunc(v)
+	case http.Handler:
+		return Wrap(v)
+	case func(http.ResponseWriter, *http.Request):
+		return WrapFunc(v)
+	case ControllerInterface:
+		return &ControllerHandler{v}
 	}
+	panic("invalid handler")
 }

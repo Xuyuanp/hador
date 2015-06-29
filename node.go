@@ -127,52 +127,52 @@ func resolveSegment(segment string) (paramName string, paramReg *regexp.Regexp) 
 }
 
 // Options adds route by call AddRoute
-func (n *Node) Options(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Options(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("OPTIONS", pattern, handler, filters...)
 }
 
 // Get adds route by call AddRoute
-func (n *Node) Get(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Get(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("GET", pattern, handler, filters...)
 }
 
 // Head adds route by call AddRoute
-func (n *Node) Head(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Head(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("HEAD", pattern, handler, filters...)
 }
 
 // Post adds route by call AddRoute
-func (n *Node) Post(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Post(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("POST", pattern, handler, filters...)
 }
 
 // Put adds route by call AddRoute
-func (n *Node) Put(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Put(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("PUT", pattern, handler, filters...)
 }
 
 // Delete adds route by call AddRoute
-func (n *Node) Delete(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Delete(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("DELETE", pattern, handler, filters...)
 }
 
 // Trace adds route by call AddRoute
-func (n *Node) Trace(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Trace(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("TRACE", pattern, handler, filters...)
 }
 
 // Connect adds route by call AddRoute
-func (n *Node) Connect(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Connect(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("CONNECT", pattern, handler, filters...)
 }
 
 // Patch adds route by call AddRoute
-func (n *Node) Patch(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Patch(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("PATCH", pattern, handler, filters...)
 }
 
 // Any adds route by call AddRoute
-func (n *Node) Any(pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) Any(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return n.AddRoute("ANY", pattern, handler, filters...)
 }
 
@@ -184,7 +184,8 @@ func (n *Node) Group(pattern string, f func(Router), filters ...Filter) {
 }
 
 // AddRoute adds a new route with method, pattern and handler
-func (n *Node) AddRoute(method, pattern string, handler Handler, filters ...Filter) *Leaf {
+func (n *Node) AddRoute(method, pattern string, h interface{}, filters ...Filter) *Leaf {
+	handler := parseHandler(h)
 	segments := genSegments(pattern)
 	if _, l, ok := n.add(segments, method, handler, filters...); ok {
 		return l

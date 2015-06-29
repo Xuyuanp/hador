@@ -21,21 +21,21 @@ func runRequest(b *testing.B, h *Hador, method, path string) {
 
 func BenchmarkSinglePath(b *testing.B) {
 	h := New()
-	h.Get("/ping", HandlerFunc(func(ctx *Context) {}))
+	h.Get("/ping", func(ctx *Context) {})
 
 	runRequest(b, h, "GET", "/ping")
 }
 
 func BenchmarkParam(b *testing.B) {
 	h := New()
-	h.Get("/{name}", HandlerFunc(func(ctx *Context) {}))
+	h.Get("/{name}", func(ctx *Context) {})
 
 	runRequest(b, h, "GET", "/jack")
 }
 
 func Benchmark5Param(b *testing.B) {
 	h := New()
-	h.Get("/{a}/{b}/{c}/{d}/{e}", HandlerFunc(func(ctx *Context) {}))
+	h.Get("/{a}/{b}/{c}/{d}/{e}", func(ctx *Context) {})
 
 	runRequest(b, h, "GET", "/a/b/c/d/e")
 }
@@ -53,17 +53,29 @@ func BenchmarkFilters(b *testing.B) {
 	runRequest(b, h, "GET", "/ping")
 }
 
+func BenchmarkHTTPHandler(b *testing.B) {
+	h := New()
+	h.Get("/ping", func(w http.ResponseWriter, r *http.Request) {})
+	runRequest(b, h, "GET", "/ping")
+}
+
+func BenchmarkController(b *testing.B) {
+	h := New()
+	h.Any("/controller", &testController{prepared: true})
+	runRequest(b, h, "GET", "/controller")
+}
+
 func BenchmarkRenderJSON(b *testing.B) {
 	h := New()
-	h.Get("/ping", HandlerFunc(func(ctx *Context) {
+	h.Get("/ping", func(ctx *Context) {
 		ctx.RenderJSON(struct {
-			Status int    `json:"status"`
-			Body   string `json:"body"`
+			Status int
+			Body   string
 		}{
 			Status: 200,
 			Body:   "OK",
 		})
-	}))
+	})
 
 	runRequest(b, h, "GET", "/ping")
 }
