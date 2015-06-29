@@ -103,7 +103,7 @@ func main() {
 	h.DocHost("127.0.0.1:9090")
 	h.Swagger(swagger.Config{
 		// your swagger-ui file path
-		UIFilePath: "/Users/pxy/Documents/github/swagger-ui/dist",
+		UIFilePath: "/path/to/swagger-ui/dist",
 
 		// swagger json api
 		APIPath: "/apidocs.json",
