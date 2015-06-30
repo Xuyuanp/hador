@@ -24,11 +24,12 @@ import (
 	"strings"
 )
 
-func genSegments(path string) []string {
-	if path == "/" {
-		path = ""
+func splitSegments(path string) []string {
+	path = trimPath(path)
+	if len(path) == 0 {
+		return []string{}
 	}
-	return strings.Split(path, "/")[1:]
+	return strings.Split(path, "/")
 }
 
 func isReg(segment string) bool {
@@ -49,14 +50,16 @@ type dispatcher struct {
 
 func (d *dispatcher) Serve(ctx *Context) {
 	n := d.node
-	segments := ctx.segments
+
+	segment := ctx.segment()
+
 	// path matches
-	if len(segments) == n.depth {
+	if len(segment) == 0 {
 		n.doServe(ctx)
 		return
 	}
+
 	// find next node
-	segment := segments[n.depth]
 	next := n.findNext(segment)
 	if next != nil {
 		if next.paramReg != nil {
@@ -178,7 +181,7 @@ func (n *Node) Any(pattern string, handler interface{}, filters ...Filter) *Leaf
 
 // Group adds group routes
 func (n *Node) Group(pattern string, f func(Router), filters ...Filter) {
-	segments := genSegments(pattern)
+	segments := splitSegments(pattern)
 	r, _, _ := n.add(segments, "", nil, filters...)
 	f(r)
 }
@@ -186,7 +189,7 @@ func (n *Node) Group(pattern string, f func(Router), filters ...Filter) {
 // AddRoute adds a new route with method, pattern and handler
 func (n *Node) AddRoute(method, pattern string, h interface{}, filters ...Filter) *Leaf {
 	handler := parseHandler(h)
-	segments := genSegments(pattern)
+	segments := splitSegments(pattern)
 	if _, l, ok := n.add(segments, method, handler, filters...); ok {
 		return l
 	}

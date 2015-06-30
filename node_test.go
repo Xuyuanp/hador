@@ -282,5 +282,15 @@ func TestNode(t *testing.T) {
 			convey.So(l1.Path(), convey.ShouldEqual, "/a/b/c/d")
 			convey.So(l2.Path(), convey.ShouldEqual, "/a/{name}")
 		})
+		convey.Convey("Test root", func() {
+			n := NewNode(nil, "", 0)
+			n.Get("/", newSimpleHandler("GET"))
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/", nil)
+			ctx := newContext(defaultLogger)
+			ctx.reset(NewResponseWriter(resp), req)
+			n.Serve(ctx)
+			convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
+		})
 	})
 }

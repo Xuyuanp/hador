@@ -31,9 +31,10 @@ type Context struct {
 	Response ResponseWriter
 	params   Params
 
-	data     map[string]interface{}
-	segments []string
-	Logger   Logger
+	data   map[string]interface{}
+	Logger Logger
+
+	currPath string
 
 	errHandlers   map[int]func(...interface{})
 	Err4XXHandler func(int, ...interface{})
@@ -54,7 +55,18 @@ func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.errHandlers = nil
 	ctx.Err4XXHandler = nil
 	ctx.Err5XXHandler = nil
-	ctx.segments = genSegments(req.URL.Path)
+
+	ctx.currPath = trimPath(req.URL.Path)
+}
+
+func trimPath(path string) string {
+	if len(path) > 0 && path[0] == '/' {
+		path = path[1:]
+	}
+	if len(path) > 0 && path[len(path)-1] == '/' {
+		path = path[:len(path)-1]
+	}
+	return path
 }
 
 // OnError handles http error by calling handler registered in SetErrorHandler methods.
@@ -108,6 +120,18 @@ func (ctx *Context) SetErrorHandler(status int, handler func(...interface{})) {
 		ctx.errHandlers = make(map[int]func(...interface{}))
 	}
 	ctx.errHandlers[status] = handler
+}
+
+func (ctx *Context) segment() string {
+	index := strings.Index(ctx.currPath, "/")
+	if index == -1 {
+		segment := ctx.currPath
+		ctx.currPath = ""
+		return segment
+	}
+	segment := ctx.currPath[:index]
+	ctx.currPath = ctx.currPath[index+1:]
+	return segment
 }
 
 // Params returns params lazy-init
