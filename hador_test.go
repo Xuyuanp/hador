@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Xuyuanp/hador/swagger"
 	"github.com/smartystreets/goconvey/convey"
 )
 
@@ -51,6 +52,18 @@ func TestHodor(t *testing.T) {
 			req, _ := http.NewRequest("GET", "/", nil)
 			h.ServeHTTP(resp, req)
 			convey.So(resp.Body.String(), convey.ShouldEqual, "before")
+		})
+		convey.Convey("Test swagger", func() {
+			h.Get("/hello", newSimpleHandler("hello")).
+				SwaggerOperation().
+				DocSumDesc("hello", "get hello")
+			h.SwaggerDocument().
+				DocHost("127.0.0.1")
+			h.Swagger(swagger.Config{APIPath: "/apidocs.json"})
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/apidocs.json", nil)
+			h.ServeHTTP(resp, req)
+			convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
 		})
 	})
 }
