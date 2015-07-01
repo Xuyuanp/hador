@@ -101,7 +101,7 @@ func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // Serve implements Handler interface
 func (h *Hador) Serve(ctx *Context) {
-	ctx.SetHeader("Server", "Hador")
+	ctx.SetHeader("Server", "Hador/"+Version)
 	h.FilterChain.Serve(ctx)
 }
 
