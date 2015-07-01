@@ -60,35 +60,40 @@ func main() {
 
 			// GET /v1/users
 			root.Get(`/`, hador.HandlerFunc(getUserList)).
-				DocSummary("get user list").
+				SwaggerOperation().
+				DocSumDesc("get user list", "").
 				DocResponseModel("200", "user list", UserList{})
 
 			// POST /v1/users
 			root.Post(`/`, hador.HandlerFunc(newUser)).
-				DocSummary("new user").
-				DocBodyParameter("user", "user info", User{}, true).
+				SwaggerOperation().
+				DocSumDesc("new user", "").
+				DocParameterBody("user", "user info", User{}, true).
 				DocResponseModel("200", "user info", User{})
 
 			root.Group(`/{user-id:\d+}`, func(userRouter hador.Router) {
 
 				// GET /v1/users/{user-id}
 				userRouter.Get(`/`, hador.HandlerFunc(getUser)).
-					DocSummary("get user info").
-					DocPathParameter("user-id", "integer", "user id", true).
+					SwaggerOperation().
+					DocSumDesc("get user info", "").
+					DocParameterPath("user-id", "integer", "user id", true).
 					DocResponseModel("200", "user info", User{})
 
 				// DELETE /v1/users/{user-id}
 				userRouter.Delete(`/`, hador.HandlerFunc(delUser)).
-					DocSummary("delete user info").
-					DocPathParameter("user-id", "integer", "user id", true).
+					SwaggerOperation().
+					DocSumDesc("delete user info", "").
+					DocParameterPath("user-id", "integer", "user id", true).
 					DocResponseModel("200", "user info", User{}).
 					DocResponseSimple("404", "not found")
 
 				// PUT /v1/users/{user-id}
 				userRouter.Put(`/`, hador.HandlerFunc(updateUser)).
-					DocSummary("update user info").
-					DocPathParameter("user-id", "user id", "integer", true).
-					DocBodyParameter("user", "user info", User{}, true).
+					SwaggerOperation().
+					DocSumDesc("update user info", "").
+					DocParameterPath("user-id", "user id", "integer", true).
+					DocParameterBody("user", "user info", User{}, true).
 					DocResponseModel("200", "user info", User{}).
 					DocResponseSimple("404", "not found")
 
@@ -99,11 +104,13 @@ func main() {
 	// swagger support
 	// open http://127.0.0.1:9090/apidocs in your broswer
 	// and enter http://127.0.0.1:9090/apidocs.json in the api input field
-	h.DocInfo("User Manager", "user CRUD", "v1", "http://your.term.of.service.addr")
-	h.DocHost("127.0.0.1:9090")
+	h.SwaggerDocument().
+		DocInfo("User Manager", "user CRUD", "v1", "http://your.term.of.service.addr").
+		DocHost("127.0.0.1:9090")
+
 	h.Swagger(swagger.Config{
 		// your swagger-ui file path
-		UIFilePath: "/path/to/swagger-ui/dist",
+		UIFilePath: "/path/to/your/swagger-ui/dist",
 
 		// swagger json api
 		APIPath: "/apidocs.json",

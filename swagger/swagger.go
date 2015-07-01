@@ -33,6 +33,8 @@ type Path map[string]Operation
 // Responses type
 type Responses map[string]Response
 
+type Parameters []Parameter
+
 // Headers type
 type Headers map[string]Header
 
@@ -130,23 +132,6 @@ type Parameter struct {
 	Schema      *Schema `json:"schema,omitempty"`
 }
 
-// Operation struct
-type Operation struct {
-	Reference
-	Tags         []string      `json:"tags,omitempty"`
-	Summary      string        `json:"summary,omitempty"`
-	Description  string        `json:"description,omitempty"`
-	ExternalDocs *ExternalDocs `json:"externalDocs,omitempty"`
-	OperationID  string        `json:"operationId,omitempty"`
-	Parameters   []Parameter   `json:"parameters,omitempty"`
-	Consumes     []string      `json:"comsumes,omitempty"`
-	Produces     []string      `json:"produces,omitempty"`
-	Responses    Responses     `json:"responses,omitempty"`
-	Schemes      []string      `json:"schemes,omitempty"`
-	Deprecated   bool          `json:"deprecated,omitempty"`
-	Security     Security      `json:"security,omitempty"`
-}
-
 // SecurityDefiniton struct
 type SecurityDefiniton struct {
 	Type             string `json:"type"`
@@ -170,23 +155,4 @@ type Tag struct {
 type ExternalDocs struct {
 	Description string `json:"description,omitempty"`
 	URL         string `json:"url"`
-}
-
-// Document struct
-type Document struct {
-	Swagger            string               `json:"swagger"`
-	Info               Info                 `json:"info"`
-	Host               string               `json:"host,omitempty"`
-	BasePath           string               `json:"basePath,omitempty"`
-	Schemes            []string             `json:"schemes,omitempty"`
-	Consumes           []string             `json:"consumes,omitempty"`
-	Produces           []string             `json:"produces,omitempty"`
-	Paths              Paths                `json:"paths"`
-	Definitions        Definitions          `json:"definitions,omitempty"`
-	Parameters         map[string]Parameter `json:"parameters,omitempty"`
-	Responses          Responses            `json:"responses,omitempty"`
-	SecurityDefinitons SecurityDefinitons   `json:"securityDefinitions,omitempty"`
-	Security           Security             `json:"security,omitempty"`
-	Tags               []Tag                `json:"tags,omitempty"`
-	ExternalDocs       *ExternalDocs        `json:"externalDocs,omitempty"`
 }
