@@ -186,6 +186,23 @@ func (n *Node) Group(pattern string, f func(Router), filters ...Filter) {
 	f(r)
 }
 
+// AddController adds Controller as Handler.
+func (n *Node) AddController(pattern string, controller ControllerInterface, filters ...Filter) {
+	controllerFilter := &ControllerFilter{controller: controller}
+	filters = append([]Filter{controllerFilter}, filters...)
+	n.Group(pattern, func(r Router) {
+		r.Options("/", controller.Options)
+		r.Get("/", controller.Get)
+		r.Head("/", controller.Head)
+		r.Post("/", controller.Post)
+		r.Put("/", controller.Put)
+		r.Delete("/", controller.Delete)
+		r.Trace("/", controller.Trace)
+		r.Connect("/", controller.Connect)
+		r.Patch("/", controller.Patch)
+	}, filters...)
+}
+
 // AddRoute adds a new route with method, pattern and handler
 func (n *Node) AddRoute(method, pattern string, h interface{}, filters ...Filter) *Leaf {
 	handler := parseHandler(h)

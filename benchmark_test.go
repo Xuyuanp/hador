@@ -68,7 +68,7 @@ func BenchmarkHTTPHandler(b *testing.B) {
 
 func BenchmarkController(b *testing.B) {
 	h := New()
-	h.Any("/controller", &testController{prepared: true})
+	h.AddController("/controller", &testController{prepared: true})
 	runRequest(b, h, "GET", "/controller")
 }
 

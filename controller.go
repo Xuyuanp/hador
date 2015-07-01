@@ -89,37 +89,14 @@ func (c *BaseController) Patch(ctx *Context) {
 	ctx.OnError(http.StatusNotImplemented)
 }
 
-// ControllerHandler is a Handler that dispatchers request by method into
-// the innerController.
-type ControllerHandler struct {
-	innerController ControllerInterface
+// ControllerFilter filters controller by using controller.Prepare methods.
+type ControllerFilter struct {
+	controller ControllerInterface
 }
 
-// Serve implements Handler interface.
-func (ch *ControllerHandler) Serve(ctx *Context) {
-	if !ch.innerController.Prepare(ctx) {
-		return
-	}
-	switch method := ctx.Request.Method; method {
-	case "OPTIONS":
-		ch.innerController.Options(ctx)
-	case "GET":
-		ch.innerController.Get(ctx)
-	case "HEAD":
-		ch.innerController.Head(ctx)
-	case "POST":
-		ch.innerController.Post(ctx)
-	case "PUT":
-		ch.innerController.Put(ctx)
-	case "DELETE":
-		ch.innerController.Delete(ctx)
-	case "TRACE":
-		ch.innerController.Trace(ctx)
-	case "CONNECT":
-		ch.innerController.Connect(ctx)
-	case "PATCH":
-		ch.innerController.Patch(ctx)
-	default:
-		ctx.OnError(http.StatusBadRequest, "no such method: "+method)
+// Filter implements Filter interface.
+func (cf *ControllerFilter) Filter(ctx *Context, next Handler) {
+	if cf.controller.Prepare(ctx) {
+		next.Serve(ctx)
 	}
 }

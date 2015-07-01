@@ -47,7 +47,7 @@ func TestController(t *testing.T) {
 		convey.Convey("Test BaseController", func() {
 			controller := &BaseController{}
 			h := New()
-			h.Any("/controller", controller)
+			h.AddController("/controller", controller)
 
 			methods := map[string]int{
 				"OPTIONS": http.StatusNotImplemented,
@@ -74,7 +74,7 @@ func TestController(t *testing.T) {
 			convey.Convey("Test method override", func() {
 				controller := &testController{prepared: true}
 				h := New()
-				h.Any("/controller", controller)
+				h.AddController("/controller", controller)
 				req, _ := http.NewRequest("GET", "/controller", nil)
 				resp := httptest.NewRecorder()
 				h.ServeHTTP(resp, req)
@@ -83,7 +83,7 @@ func TestController(t *testing.T) {
 			convey.Convey("Test not prepared", func() {
 				controller := &testController{prepared: false}
 				h := New()
-				h.Any("/controller", controller)
+				h.AddController("/controller", controller)
 				req, _ := http.NewRequest("GET", "/controller", nil)
 				resp := httptest.NewRecorder()
 				h.ServeHTTP(resp, req)
@@ -92,12 +92,11 @@ func TestController(t *testing.T) {
 			convey.Convey("Test illeagel method", func() {
 				controller := &testController{prepared: true}
 				h := New()
-				h.Any("/controller", controller)
+				h.AddController("/controller", controller)
 				req, _ := http.NewRequest("FOO", "/controller", nil)
 				resp := httptest.NewRecorder()
 				h.ServeHTTP(resp, req)
-				convey.So(resp.Code, convey.ShouldEqual, http.StatusBadRequest)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "no such method: FOO\n")
+				convey.So(resp.Code, convey.ShouldEqual, http.StatusMethodNotAllowed)
 			})
 		})
 	})

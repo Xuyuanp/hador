@@ -54,8 +54,6 @@ func parseHandler(h interface{}) Handler {
 		return Wrap(v)
 	case func(http.ResponseWriter, *http.Request):
 		return WrapFunc(v)
-	case ControllerInterface:
-		return &ControllerHandler{v}
 	}
 	panic("invalid handler")
 }

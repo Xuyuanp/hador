@@ -21,18 +21,20 @@ package hador
 type Router interface {
 	Handler
 
-	Options(method string, h interface{}, filters ...Filter) *Leaf
-	Get(method string, h interface{}, filters ...Filter) *Leaf
-	Head(method string, h interface{}, filters ...Filter) *Leaf
-	Post(method string, h interface{}, filters ...Filter) *Leaf
-	Put(method string, h interface{}, filters ...Filter) *Leaf
-	Delete(method string, h interface{}, filters ...Filter) *Leaf
-	Trace(method string, h interface{}, filters ...Filter) *Leaf
-	Connect(method string, h interface{}, filters ...Filter) *Leaf
-	Patch(method string, h interface{}, filters ...Filter) *Leaf
-	Any(method string, h interface{}, filters ...Filter) *Leaf
+	Options(pattern string, h interface{}, filters ...Filter) *Leaf
+	Get(pattern string, h interface{}, filters ...Filter) *Leaf
+	Head(pattern string, h interface{}, filters ...Filter) *Leaf
+	Post(pattern string, h interface{}, filters ...Filter) *Leaf
+	Put(pattern string, h interface{}, filters ...Filter) *Leaf
+	Delete(pattern string, h interface{}, filters ...Filter) *Leaf
+	Trace(pattern string, h interface{}, filters ...Filter) *Leaf
+	Connect(pattern string, h interface{}, filters ...Filter) *Leaf
+	Patch(pattern string, h interface{}, filters ...Filter) *Leaf
+	Any(pattern string, h interface{}, filters ...Filter) *Leaf
 
-	AddRoute(path string, method string, h interface{}, filters ...Filter) *Leaf
+	AddController(pattern string, controller ControllerInterface, filters ...Filter)
 
-	Group(path string, fn func(Router), filters ...Filter)
+	AddRoute(pattern string, method string, h interface{}, filters ...Filter) *Leaf
+
+	Group(pattern string, fn func(Router), filters ...Filter)
 }
