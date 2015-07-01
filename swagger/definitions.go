@@ -22,6 +22,8 @@ import (
 	"strings"
 )
 
+var GlobalDefinitions = make(Definitions)
+
 // Definitions is global model definitions
 type Definitions map[string]Schema
 

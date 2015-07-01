@@ -45,7 +45,7 @@ func New() *Hador {
 		Logger: defaultLogger,
 		Document: &swagger.Document{
 			Swagger:     "2.0.0",
-			Definitions: swagger.Definitions{},
+			Definitions: swagger.GlobalDefinitions,
 			Tags:        []swagger.Tag{},
 			Responses:   swagger.Responses{},
 			Parameters:  map[string]swagger.Parameter{},

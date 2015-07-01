@@ -33,6 +33,8 @@ type Path map[string]Operation
 // Responses type
 type Responses map[string]Response
 
+type Parameters []Parameter
+
 // Headers type
 type Headers map[string]Header
 
@@ -128,23 +130,6 @@ type Parameter struct {
 	Description string  `json:"description,omitempty"`
 	Required    bool    `json:"required,omitempty"`
 	Schema      *Schema `json:"schema,omitempty"`
-}
-
-// Operation struct
-type Operation struct {
-	Reference
-	Tags         []string      `json:"tags,omitempty"`
-	Summary      string        `json:"summary,omitempty"`
-	Description  string        `json:"description,omitempty"`
-	ExternalDocs *ExternalDocs `json:"externalDocs,omitempty"`
-	OperationID  string        `json:"operationId,omitempty"`
-	Parameters   []Parameter   `json:"parameters,omitempty"`
-	Consumes     []string      `json:"comsumes,omitempty"`
-	Produces     []string      `json:"produces,omitempty"`
-	Responses    Responses     `json:"responses,omitempty"`
-	Schemes      []string      `json:"schemes,omitempty"`
-	Deprecated   bool          `json:"deprecated,omitempty"`
-	Security     Security      `json:"security,omitempty"`
 }
 
 // SecurityDefiniton struct

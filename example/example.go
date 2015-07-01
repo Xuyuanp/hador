@@ -60,35 +60,40 @@ func main() {
 
 			// GET /v1/users
 			root.Get(`/`, hador.HandlerFunc(getUserList)).
-				DocSummary("get user list").
+				DocOperation().
+				DocSumDesc("get user list", "").
 				DocResponseModel("200", "user list", UserList{})
 
 			// POST /v1/users
 			root.Post(`/`, hador.HandlerFunc(newUser)).
-				DocSummary("new user").
-				DocBodyParameter("user", "user info", User{}, true).
+				DocOperation().
+				DocSumDesc("new user", "").
+				DocParameterBody("user", "user info", User{}, true).
 				DocResponseModel("200", "user info", User{})
 
 			root.Group(`/{user-id:\d+}`, func(userRouter hador.Router) {
 
 				// GET /v1/users/{user-id}
 				userRouter.Get(`/`, hador.HandlerFunc(getUser)).
-					DocSummary("get user info").
-					DocPathParameter("user-id", "integer", "user id", true).
+					DocOperation().
+					DocSumDesc("get user info", "").
+					DocParameterPath("user-id", "integer", "user id", true).
 					DocResponseModel("200", "user info", User{})
 
 				// DELETE /v1/users/{user-id}
 				userRouter.Delete(`/`, hador.HandlerFunc(delUser)).
-					DocSummary("delete user info").
-					DocPathParameter("user-id", "integer", "user id", true).
+					DocOperation().
+					DocSumDesc("delete user info", "").
+					DocParameterPath("user-id", "integer", "user id", true).
 					DocResponseModel("200", "user info", User{}).
 					DocResponseSimple("404", "not found")
 
 				// PUT /v1/users/{user-id}
 				userRouter.Put(`/`, hador.HandlerFunc(updateUser)).
-					DocSummary("update user info").
-					DocPathParameter("user-id", "user id", "integer", true).
-					DocBodyParameter("user", "user info", User{}, true).
+					DocOperation().
+					DocSumDesc("update user info", "").
+					DocParameterPath("user-id", "user id", "integer", true).
+					DocParameterBody("user", "user info", User{}, true).
 					DocResponseModel("200", "user info", User{}).
 					DocResponseSimple("404", "not found")
 
@@ -103,7 +108,7 @@ func main() {
 	h.DocHost("127.0.0.1:9090")
 	h.Swagger(swagger.Config{
 		// your swagger-ui file path
-		UIFilePath: "/path/to/swagger-ui/dist",
+		UIFilePath: "/path/to/your/swagger-ui/dist",
 
 		// swagger json api
 		APIPath: "/apidocs.json",
