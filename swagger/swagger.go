@@ -156,22 +156,3 @@ type ExternalDocs struct {
 	Description string `json:"description,omitempty"`
 	URL         string `json:"url"`
 }
-
-// Document struct
-type Document struct {
-	Swagger            string               `json:"swagger"`
-	Info               Info                 `json:"info"`
-	Host               string               `json:"host,omitempty"`
-	BasePath           string               `json:"basePath,omitempty"`
-	Schemes            []string             `json:"schemes,omitempty"`
-	Consumes           []string             `json:"consumes,omitempty"`
-	Produces           []string             `json:"produces,omitempty"`
-	Paths              Paths                `json:"paths"`
-	Definitions        Definitions          `json:"definitions,omitempty"`
-	Parameters         map[string]Parameter `json:"parameters,omitempty"`
-	Responses          Responses            `json:"responses,omitempty"`
-	SecurityDefinitons SecurityDefinitons   `json:"securityDefinitions,omitempty"`
-	Security           Security             `json:"security,omitempty"`
-	Tags               []Tag                `json:"tags,omitempty"`
-	ExternalDocs       *ExternalDocs        `json:"externalDocs,omitempty"`
-}

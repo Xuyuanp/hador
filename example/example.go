@@ -104,8 +104,10 @@ func main() {
 	// swagger support
 	// open http://127.0.0.1:9090/apidocs in your broswer
 	// and enter http://127.0.0.1:9090/apidocs.json in the api input field
-	h.DocInfo("User Manager", "user CRUD", "v1", "http://your.term.of.service.addr")
-	h.DocHost("127.0.0.1:9090")
+	h.SwaggerDocument().
+		DocInfo("User Manager", "user CRUD", "v1", "http://your.term.of.service.addr").
+		DocHost("127.0.0.1:9090")
+
 	h.Swagger(swagger.Config{
 		// your swagger-ui file path
 		UIFilePath: "/path/to/your/swagger-ui/dist",
