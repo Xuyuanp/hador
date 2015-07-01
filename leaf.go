@@ -77,7 +77,7 @@ func (l *Leaf) DocIgnore(ignored bool) *Leaf {
 	return l
 }
 
-// DocOperation returns swagger Operation of this route.
-func (l *Leaf) DocOperation() *swagger.Operation {
+// SwaggerOperation returns swagger Operation of this route.
+func (l *Leaf) SwaggerOperation() *swagger.Operation {
 	return &l.operation
 }
