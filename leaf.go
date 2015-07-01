@@ -30,14 +30,14 @@ type Leaf struct {
 	parent  *Node
 	path    string
 	handler Handler
-	method  string
+	method  Method
 
 	DocIgnored bool
 	operation  swagger.Operation
 }
 
 // NewLeaf creates new Leaf instance
-func NewLeaf(parent *Node, method string, handler Handler) *Leaf {
+func NewLeaf(parent *Node, method Method, handler Handler) *Leaf {
 	l := &Leaf{
 		h:       parent.h,
 		parent:  parent,
@@ -55,7 +55,7 @@ func (l *Leaf) Path() string {
 }
 
 // Method returns method of Leaf
-func (l *Leaf) Method() string {
+func (l *Leaf) Method() Method {
 	return l.method
 }
 

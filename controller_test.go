@@ -98,6 +98,22 @@ func TestController(t *testing.T) {
 				h.ServeHTTP(resp, req)
 				convey.So(resp.Code, convey.ShouldEqual, http.StatusMethodNotAllowed)
 			})
+
+			convey.Convey("Test Controller with Filter", func() {
+				controller := &testController{prepared: true}
+				h := New()
+				ok := false
+				h.AddController("/controller", controller, FilterFunc(
+					func(ctx *Context, next Handler) {
+						ok = true
+						next.Serve(ctx)
+					}))
+				req, _ := http.NewRequest("GET", "/controller", nil)
+				resp := httptest.NewRecorder()
+				h.ServeHTTP(resp, req)
+				convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
+				convey.So(ok, convey.ShouldBeTrue)
+			})
 		})
 	})
 }

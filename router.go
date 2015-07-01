@@ -17,6 +17,39 @@
 
 package hador
 
+// Method is HTTP method.
+type Method string
+
+// available methods.
+const (
+	OPTIONS Method = "OPTIONS"
+	GET            = "GET"
+	HEAD           = "HEAD"
+	POST           = "POST"
+	PUT            = "PUT"
+	DELETE         = "DELETE"
+	TRACE          = "TRACE"
+	CONNECT        = "CONNECT"
+	PATCH          = "PATCH"
+)
+
+// Methods is a list of all valid methods.
+var Methods = []Method{
+	OPTIONS,
+	GET,
+	HEAD,
+	POST,
+	PUT,
+	DELETE,
+	TRACE,
+	CONNECT,
+	PATCH,
+}
+
+func (m Method) String() string {
+	return string(m)
+}
+
 // Router interface
 type Router interface {
 	Handler
@@ -30,11 +63,39 @@ type Router interface {
 	Trace(pattern string, h interface{}, filters ...Filter) *Leaf
 	Connect(pattern string, h interface{}, filters ...Filter) *Leaf
 	Patch(pattern string, h interface{}, filters ...Filter) *Leaf
+
+	// Any routes doesn't support swagger API, all DocXXX methods will be ignored.
 	Any(pattern string, h interface{}, filters ...Filter) *Leaf
 
 	AddController(pattern string, controller ControllerInterface, filters ...Filter)
 
-	AddRoute(pattern string, method string, h interface{}, filters ...Filter) *Leaf
+	AddRoute(method Method, pattern string, h interface{}, filters ...Filter) *Leaf
 
 	Group(pattern string, fn func(Router), filters ...Filter)
+}
+
+// Handle adds route for r by calling Router's right method.
+func Handle(r Router, method Method, pattern string, h interface{}, filters ...Filter) *Leaf {
+	var leaf *Leaf
+	switch method {
+	case OPTIONS:
+		leaf = r.Options(pattern, h, filters...)
+	case GET:
+		leaf = r.Get(pattern, h, filters...)
+	case HEAD:
+		leaf = r.Head(pattern, h, filters...)
+	case POST:
+		leaf = r.Post(pattern, h, filters...)
+	case PUT:
+		leaf = r.Put(pattern, h, filters...)
+	case DELETE:
+		leaf = r.Delete(pattern, h, filters...)
+	case TRACE:
+		leaf = r.Trace(pattern, h, filters...)
+	case CONNECT:
+		leaf = r.Connect(pattern, h, filters...)
+	case PATCH:
+		leaf = r.Patch(pattern, h, filters...)
+	}
+	return leaf
 }

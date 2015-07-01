@@ -83,7 +83,7 @@ type Node struct {
 	paramReg    *regexp.Regexp
 	rawChildren map[string]*Node
 	regChildren []*Node
-	leaves      map[string]*Leaf
+	leaves      map[Method]*Leaf
 }
 
 // NewNode creates new Node instance.
@@ -97,7 +97,7 @@ func NewNode(h *Hador, segment string, depth int) *Node {
 		paramReg:    paramReg,
 		rawChildren: make(map[string]*Node),
 		regChildren: make([]*Node, 0),
-		leaves:      make(map[string]*Leaf),
+		leaves:      make(map[Method]*Leaf),
 	}
 	n.FilterChain = NewFilterChain(&dispatcher{node: n})
 	return n
@@ -131,47 +131,47 @@ func resolveSegment(segment string) (paramName string, paramReg *regexp.Regexp) 
 
 // Options adds route by call AddRoute
 func (n *Node) Options(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("OPTIONS", pattern, handler, filters...)
+	return n.AddRoute(OPTIONS, pattern, handler, filters...)
 }
 
 // Get adds route by call AddRoute
 func (n *Node) Get(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("GET", pattern, handler, filters...)
+	return n.AddRoute(GET, pattern, handler, filters...)
 }
 
 // Head adds route by call AddRoute
 func (n *Node) Head(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("HEAD", pattern, handler, filters...)
+	return n.AddRoute(HEAD, pattern, handler, filters...)
 }
 
 // Post adds route by call AddRoute
 func (n *Node) Post(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("POST", pattern, handler, filters...)
+	return n.AddRoute(POST, pattern, handler, filters...)
 }
 
 // Put adds route by call AddRoute
 func (n *Node) Put(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("PUT", pattern, handler, filters...)
+	return n.AddRoute(PUT, pattern, handler, filters...)
 }
 
 // Delete adds route by call AddRoute
 func (n *Node) Delete(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("DELETE", pattern, handler, filters...)
+	return n.AddRoute(DELETE, pattern, handler, filters...)
 }
 
 // Trace adds route by call AddRoute
 func (n *Node) Trace(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("TRACE", pattern, handler, filters...)
+	return n.AddRoute(TRACE, pattern, handler, filters...)
 }
 
 // Connect adds route by call AddRoute
 func (n *Node) Connect(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("CONNECT", pattern, handler, filters...)
+	return n.AddRoute(CONNECT, pattern, handler, filters...)
 }
 
 // Patch adds route by call AddRoute
 func (n *Node) Patch(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("PATCH", pattern, handler, filters...)
+	return n.AddRoute(PATCH, pattern, handler, filters...)
 }
 
 // Any adds route by call AddRoute
@@ -191,20 +191,16 @@ func (n *Node) AddController(pattern string, controller ControllerInterface, fil
 	controllerFilter := &ControllerFilter{controller: controller}
 	filters = append([]Filter{controllerFilter}, filters...)
 	n.Group(pattern, func(r Router) {
-		r.Options("/", controller.Options)
-		r.Get("/", controller.Get)
-		r.Head("/", controller.Head)
-		r.Post("/", controller.Post)
-		r.Put("/", controller.Put)
-		r.Delete("/", controller.Delete)
-		r.Trace("/", controller.Trace)
-		r.Connect("/", controller.Connect)
-		r.Patch("/", controller.Patch)
+		for _, method := range Methods {
+			handler := handlerForMethod(controller, method)
+			leaf := Handle(r, method, "/", handler)
+			docMethodForMethod(controller, method)(leaf)
+		}
 	}, filters...)
 }
 
 // AddRoute adds a new route with method, pattern and handler
-func (n *Node) AddRoute(method, pattern string, h interface{}, filters ...Filter) *Leaf {
+func (n *Node) AddRoute(method Method, pattern string, h interface{}, filters ...Filter) *Leaf {
 	handler := parseHandler(h)
 	segments := splitSegments(pattern)
 	if _, l, ok := n.add(segments, method, handler, filters...); ok {
@@ -213,7 +209,7 @@ func (n *Node) AddRoute(method, pattern string, h interface{}, filters ...Filter
 	panic(fmt.Errorf("pattern: %s has been registered", pattern))
 }
 
-func (n *Node) add(segments []string, method string, handler Handler, filters ...Filter) (*Node, *Leaf, bool) {
+func (n *Node) add(segments []string, method Method, handler Handler, filters ...Filter) (*Node, *Leaf, bool) {
 	if len(segments) == 0 {
 		if method != "" && handler != nil {
 			l, ok := n.handle(method, handler, filters...)
@@ -228,7 +224,7 @@ func (n *Node) add(segments []string, method string, handler Handler, filters ..
 	return next.add(segments[1:], method, handler, filters...)
 }
 
-func (n *Node) handle(method string, handler Handler, filters ...Filter) (l *Leaf, ok bool) {
+func (n *Node) handle(method Method, handler Handler, filters ...Filter) (l *Leaf, ok bool) {
 	if _, ok := n.leaves[method]; ok {
 		return nil, false
 	}
@@ -284,7 +280,7 @@ func (n *Node) doServe(ctx *Context) {
 		return
 	}
 	// method matches
-	if l, ok := n.leaves[ctx.Request.Method]; ok {
+	if l, ok := n.leaves[Method(ctx.Request.Method)]; ok {
 		l.Serve(ctx)
 		return
 	}
@@ -294,7 +290,7 @@ func (n *Node) doServe(ctx *Context) {
 		return
 	}
 	// 405 method not allowed
-	methods := make([]string, len(n.leaves))
+	methods := make([]Method, len(n.leaves))
 	i := 0
 	for m := range n.leaves {
 		methods[i] = m
@@ -349,7 +345,7 @@ func (n *Node) Leaves() []*Leaf {
 		leaves[i] = l
 		i++
 	}
-	return leaves
+	return leaves[:i]
 }
 
 func (n *Node) travel(llist *list.List) {
