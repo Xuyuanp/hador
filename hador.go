@@ -128,7 +128,7 @@ func (h *Hador) travelPaths() swagger.Paths {
 	spaths := make(swagger.Paths)
 	leaves := h.travel()
 	for _, leaf := range leaves {
-		if leaf.DocIgnored {
+		if leaf.DocIgnored || leaf.method == "ANY" {
 			continue
 		}
 
