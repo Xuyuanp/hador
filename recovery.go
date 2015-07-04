@@ -19,7 +19,7 @@ package hador
 import (
 	"fmt"
 	"net/http"
-	"runtime/debug"
+	"runtime"
 )
 
 // NewRecoveryFilter return a Filter to recover all unrecovered panic
@@ -27,7 +27,9 @@ func NewRecoveryFilter(logger Logger) FilterFunc {
 	return func(ctx *Context, next Handler) {
 		defer func() {
 			if err := recover(); err != nil {
-				stack := debug.Stack()
+				trace := make([]byte, 1<<16)
+				n := runtime.Stack(trace, true)
+				stack := trace[:n]
 				msg := fmt.Sprintf("PANIC: %v\n%s", err, stack)
 				logger.Critical(msg)
 				ctx.OnError(http.StatusInternalServerError, err)
