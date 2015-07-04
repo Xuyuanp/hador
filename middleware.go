@@ -1,5 +1,6 @@
 /*
- * Copyright 2014 Xuyuan Pang <xuyuanp # gmail dot com>
+ * Copyright 2015 Xuyuan Pang
+ * Author: Xuyuan Pang
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +17,10 @@
 
 package hador
 
-import "fmt"
+// Middleware is another type of Filter.
+type Middleware func(next Handler) Handler
 
-func newSimpleHandler(content string) Handler {
-	return HandlerFunc(func(ctx *Context) {
-		ctx.WriteString(content)
-	})
-}
-
-func newMiddleware(name string) Middleware {
-	return func(next Handler) Handler {
-		return HandlerFunc(func(ctx *Context) {
-			ctx.WriteString(fmt.Sprintf("%s Before -> ", name))
-			next.Serve(ctx)
-			ctx.WriteString(fmt.Sprintf(" -> %s After", name))
-		})
-	}
+// Filter implements Filter interface.
+func (mw Middleware) Filter(ctx *Context, next Handler) {
+	mw(next).Serve(ctx)
 }
