@@ -32,20 +32,20 @@
 //
 //		h.Group("/v1", func(root hador.Router) {
 //
-//			root.Get("/hello", hador.HandlerFunc(func(ctx hador.Context) {
+//			root.Get("/hello", func(ctx hador.Context) {
 //				ctx.Response.Write([]byte("hello"))
-//			}), f2)
+//			}, f2)
 //
-//			root.Get(`/hello/{name:\w+}`, hador.HandlerFunc(func(ctx hador.Context) {
+//			root.Get(`/hello/{name:\w+}`, func(ctx hador.Context) {
 //				name := ctx.Params().GetStringMust("name", "")
 //				ctx.Response.Write([]byte("hello " + name))
-//			}), f3, f4)
+//			}, f3, f4)
 //
 //		}, f1)
 //
-//		h.Get("/hello", hador.HandlerFunc(func(ctx hador.Context) {
+//		h.Get("/hello", func(ctx hador.Context) {
 //			ctx.Response.Write([]byte("hello"))
-//		}), f5)
+//		}, f5)
 //
 //		h.Run(":<your_port>")
 //	}
