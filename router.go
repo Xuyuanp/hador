@@ -67,6 +67,10 @@ type Router interface {
 	// Any routes doesn't support swagger API, all DocXXX methods will be ignored.
 	Any(pattern string, h interface{}, filters ...Filter) *Leaf
 
+	// Be carefull! All requests match this pattern would be processed by the provided
+	// controller instance, no new ControllerInterface implemented instance would be
+	// created. If you want to share data in your controller, please make sure it is
+	// goroutine-safe.
 	AddController(pattern string, controller ControllerInterface, filters ...Filter)
 
 	AddRoute(method Method, pattern string, h interface{}, filters ...Filter) *Leaf

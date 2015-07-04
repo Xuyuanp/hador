@@ -21,6 +21,7 @@ import "net/http"
 
 // ControllerInterface is definition of controller API.
 type ControllerInterface interface {
+	// If Prepare method returns false, this request will be ended.
 	Prepare(ctx *Context) bool
 
 	Options(ctx *Context)
