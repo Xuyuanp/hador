@@ -29,7 +29,7 @@ type Leaf struct {
 	method  Method
 
 	DocIgnored bool
-	operation  swagger.Operation
+	operation  *swagger.Operation
 }
 
 // NewLeaf creates new Leaf instance
@@ -79,5 +79,8 @@ func (l *Leaf) DocIgnore(ignored bool) *Leaf {
 
 // SwaggerOperation returns swagger Operation of this route.
 func (l *Leaf) SwaggerOperation() *swagger.Operation {
-	return &l.operation
+	if l.operation == nil {
+		l.operation = &swagger.Operation{}
+	}
+	return l.operation
 }

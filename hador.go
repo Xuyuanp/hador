@@ -138,7 +138,7 @@ func (h *Hador) travelPaths() swagger.Paths {
 			spaths[leaf.Path()] = spath
 		}
 
-		spath[strings.ToLower(leaf.Method().String())] = leaf.operation
+		spath[strings.ToLower(leaf.Method().String())] = *leaf.SwaggerOperation()
 	}
 	return spaths
 }
