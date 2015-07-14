@@ -22,4 +22,4 @@ package hador
 // 	Major: a large or potentially backward-incompatible API.
 //	Minor: a new minor feature or a set of smaller features.
 //	Patch: small bugfixed.
-const Version = "0.0.0"
+const Version = "0.1.0"
