@@ -28,16 +28,17 @@ func TestNode(t *testing.T) {
 	convey.Convey("Test tree", t, func() {
 		convey.Convey("Test All method", func() {
 			n := NewNode(nil, "", 0)
-			n.Options("/a/b", newSimpleHandler("OPTIONS"))
-			n.Get("/a/b", newSimpleHandler("GET"))
-			n.Head("/a/b", newSimpleHandler("HEAD"))
-			n.Post("/a/b", newSimpleHandler("POST"))
-			n.Put("/a/b", newSimpleHandler("PUT"))
-			n.Delete("/a/b", newSimpleHandler("DELETE"))
-			n.Trace("/a/b", newSimpleHandler("TRACE"))
-			n.Connect("/a/b", newSimpleHandler("CONNECT"))
-			n.Patch("/a/b", newSimpleHandler("PATCH"))
-			n.Any("/a/c", newSimpleHandler("ANY"))
+			r := newRouter(n)
+			r.Options("/a/b", newSimpleHandler("OPTIONS"))
+			r.Get("/a/b", newSimpleHandler("GET"))
+			r.Head("/a/b", newSimpleHandler("HEAD"))
+			r.Post("/a/b", newSimpleHandler("POST"))
+			r.Put("/a/b", newSimpleHandler("PUT"))
+			r.Delete("/a/b", newSimpleHandler("DELETE"))
+			r.Trace("/a/b", newSimpleHandler("TRACE"))
+			r.Connect("/a/b", newSimpleHandler("CONNECT"))
+			r.Patch("/a/b", newSimpleHandler("PATCH"))
+			r.Any("/a/c", newSimpleHandler("ANY"))
 			convey.Convey("Test OPTIONS", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("OPTIONS", "/a/b", nil)
@@ -130,7 +131,8 @@ func TestNode(t *testing.T) {
 			})
 			convey.Convey("Test Group", func() {
 				n := NewNode(nil, "", 0)
-				n.Group("/a", func(r Router) {
+				router := newRouter(n)
+				router.Group("/a", func(r Router) {
 					r.Get("/b", newSimpleHandler("GET"))
 					r.Post("/c", newSimpleHandler("POST"))
 				})
@@ -156,14 +158,16 @@ func TestNode(t *testing.T) {
 					convey.So(recover(), convey.ShouldNotBeNil)
 				}()
 				n := NewNode(nil, "", 0)
-				n.Get("/test", newSimpleHandler("h1"))
-				n.Get("/test", newSimpleHandler("h2"))
+				r := newRouter(n)
+				r.Get("/test", newSimpleHandler("h1"))
+				r.Get("/test", newSimpleHandler("h2"))
 			})
 		})
 		convey.Convey("Test regexp path", func() {
 			n := NewNode(nil, "", 0)
-			n.Get(`/{name}`, newSimpleHandler("h1"))
-			n.Get(`/{name}/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
+			r := newRouter(n)
+			r.Get(`/{name}`, newSimpleHandler("h1"))
+			r.Get(`/{name}/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
 			convey.Convey("/jack", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/jack", nil)
@@ -191,8 +195,9 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test Filter", func() {
 			n := NewNode(nil, "", 0)
-			n.Get("/a", newSimpleHandler("h1"))
-			n.Get("/a/b", newSimpleHandler("h2"), FilterFunc(func(ctx *Context, next Handler) {
+			r := newRouter(n)
+			r.Get("/a", newSimpleHandler("h1"))
+			r.Get("/a/b", newSimpleHandler("h2"), FilterFunc(func(ctx *Context, next Handler) {
 				ctx.Response.Write([]byte("Filter"))
 			}))
 			convey.Convey("test /a", func() {
@@ -214,7 +219,8 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test FilteFilter with Group", func() {
 			n := NewNode(nil, "", 0)
-			n.Group("/a", func(r Router) {
+			router := newRouter(n)
+			router.Group("/a", func(r Router) {
 				r.Get("/b", newSimpleHandler("h1"))
 				r.Get("/c", newSimpleHandler("h2"))
 			}, FilterFunc(func(ctx *Context, next Handler) {
@@ -239,7 +245,7 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test error", func() {
 			n := NewNode(nil, "", 0)
-			n.Get("/a/b", newSimpleHandler("GET"))
+			n.AddRoute(GET, "/a/b", newSimpleHandler("GET"))
 			convey.Convey("test GET /a/b", func() {
 				resp := httptest.NewRecorder()
 				req, _ := http.NewRequest("GET", "/a/b", nil)
@@ -275,16 +281,17 @@ func TestNode(t *testing.T) {
 		})
 		convey.Convey("Test Path", func() {
 			n := NewNode(nil, "", 0)
-			l := n.Get("/", newSimpleHandler("GET"))
-			l1 := n.Get("/a/b/c/d", newSimpleHandler("GET"))
-			l2 := n.Get("/a/(?P<name>.+)", newSimpleHandler("GET"))
+			l := n.AddRoute(GET, "/", newSimpleHandler("GET"))
+			l1 := n.AddRoute(GET, "/a/b/c/d", newSimpleHandler("GET"))
+			l2 := n.AddRoute(GET, "/a/(?P<name>.+)", newSimpleHandler("GET"))
 			convey.So(l.Path(), convey.ShouldEqual, "/")
 			convey.So(l1.Path(), convey.ShouldEqual, "/a/b/c/d")
 			convey.So(l2.Path(), convey.ShouldEqual, "/a/{name}")
 		})
 		convey.Convey("Test root", func() {
 			n := NewNode(nil, "", 0)
-			n.Get("/", newSimpleHandler("GET"))
+			r := newRouter(n)
+			r.Get("/", newSimpleHandler("GET"))
 			resp := httptest.NewRecorder()
 			req, _ := http.NewRequest("GET", "/", nil)
 			ctx := newContext(defaultLogger)
