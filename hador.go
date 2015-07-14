@@ -55,7 +55,7 @@ func New() *Hador {
 	}
 	h.root = NewNode(h, "", 0)
 	h.Router = h.root
-	h.FilterChain = NewFilterChain(h.Router)
+	h.FilterChain = NewFilterChain(h.root)
 
 	h.ctxPool.New = func() interface{} {
 		return newContext(h.Logger)

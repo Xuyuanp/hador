@@ -52,8 +52,6 @@ func (m Method) String() string {
 
 // Router interface
 type Router interface {
-	Handler
-
 	Setter() MethodSetter
 
 	Options(pattern string, h interface{}, filters ...Filter) *Leaf
