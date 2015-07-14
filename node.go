@@ -46,37 +46,8 @@ func isReg(segment string) bool {
 
 var regSegmentRegexp = regexp.MustCompile(`\(\?P<.+>.+\)`)
 
-type dispatcher struct {
-	node *Node
-}
-
-func (d *dispatcher) Serve(ctx *Context) {
-	n := d.node
-
-	segment := ctx.segment()
-
-	// path matches
-	if len(segment) == 0 {
-		n.doServe(ctx)
-		return
-	}
-
-	// find next node
-	next := n.findNext(segment)
-	if next != nil {
-		if next.paramReg != nil {
-			ctx.Params()[next.paramName] = segment
-		}
-		next.Serve(ctx)
-		return
-	}
-	// 404 not found
-	ctx.OnError(http.StatusNotFound)
-}
-
 // Node struct
 type Node struct {
-	*FilterChain
 	h           *Hador
 	parent      *Node
 	depth       int
@@ -101,7 +72,6 @@ func NewNode(h *Hador, segment string, depth int) *Node {
 		regChildren: make([]*Node, 0),
 		leaves:      make(map[Method]*Leaf),
 	}
-	n.FilterChain = NewFilterChain(&dispatcher{node: n})
 	return n
 }
 
@@ -147,7 +117,6 @@ func (n *Node) add(segments []string, method Method, handler Handler, filters ..
 			l, ok := n.handle(method, handler, filters...)
 			return n, l, ok
 		}
-		n.AddFilters(filters...)
 		return n, nil, true
 	}
 
@@ -203,6 +172,28 @@ func (n *Node) findNext(segment string) (next *Node) {
 		}
 	}
 	return
+}
+
+func (n *Node) Serve(ctx *Context) {
+	segment := ctx.segment()
+
+	// path matches
+	if len(segment) == 0 {
+		n.doServe(ctx)
+		return
+	}
+
+	// find next node
+	next := n.findNext(segment)
+	if next != nil {
+		if next.paramReg != nil {
+			ctx.Params()[next.paramName] = segment
+		}
+		next.Serve(ctx)
+		return
+	}
+	// 404 not found
+	ctx.OnError(http.StatusNotFound)
 }
 
 func (n *Node) doServe(ctx *Context) {
