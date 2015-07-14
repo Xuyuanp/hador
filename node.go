@@ -22,8 +22,6 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-
-	"github.com/Xuyuanp/hador/swagger"
 )
 
 func splitSegments(path string) []string {
@@ -113,11 +111,8 @@ func (n *Node) AddRoute(method Method, pattern string, h interface{}, filters ..
 
 func (n *Node) add(segments []string, method Method, handler Handler, filters ...Filter) (*Node, *Leaf, bool) {
 	if len(segments) == 0 {
-		if method != "" && handler != nil {
-			l, ok := n.handle(method, handler, filters...)
-			return n, l, ok
-		}
-		return n, nil, true
+		l, ok := n.handle(method, handler, filters...)
+		return n, l, ok
 	}
 
 	segment := segments[0]
@@ -228,17 +223,6 @@ func (n *Node) MatchRegexp(segment string) bool {
 		return true
 	}
 	return false
-}
-
-// Setter returns a setter-chain to add a new route.
-func (n *Node) Setter() MethodSetter {
-	return func(method Method) PathSetter {
-		return func(path string) HandlerSetter {
-			return func(handler interface{}, filters ...Filter) *swagger.Operation {
-				return n.AddRoute(method, path, handler, filters...).SwaggerOperation()
-			}
-		}
-	}
 }
 
 // Path returns the full path from root to the node

@@ -299,5 +299,20 @@ func TestNode(t *testing.T) {
 			n.Serve(ctx)
 			convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
 		})
+		convey.Convey("Test Setter", func() {
+			n := NewNode(nil, "", 0)
+			r := newRouter(n)
+			r.Setter().
+				Method(GET).
+				Pattern("/setter").
+				Handler(newSimpleHandler("setter"))
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/setter", nil)
+			ctx := newContext(defaultLogger)
+			ctx.reset(NewResponseWriter(resp), req)
+			n.Serve(ctx)
+			convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
+			convey.So(resp.Body.String(), convey.ShouldEqual, "setter")
+		})
 	})
 }

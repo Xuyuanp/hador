@@ -51,7 +51,7 @@ func (r RouterFunc) Any(pattern string, handler interface{}, filters ...Filter) 
 }
 
 func (r RouterFunc) Setter() MethodSetter {
-	return func(method Method) PathSetter {
+	return func(method Method) PatternSetter {
 		return func(pattern string) HandlerSetter {
 			return func(handler interface{}, filters ...Filter) *swagger.Operation {
 				return r.AddRoute(method, pattern, handler, filters...).SwaggerOperation()
