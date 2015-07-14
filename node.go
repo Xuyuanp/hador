@@ -169,6 +169,7 @@ func (n *Node) findNext(segment string) (next *Node) {
 	return
 }
 
+// Serve implements Handler interface.
 func (n *Node) Serve(ctx *Context) {
 	segment := ctx.segment()
 
