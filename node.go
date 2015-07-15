@@ -203,11 +203,6 @@ func (n *Node) doServe(ctx *Context) {
 		l.Serve(ctx)
 		return
 	}
-	// ANY matches
-	if l, ok := n.leaves["ANY"]; ok {
-		l.Serve(ctx)
-		return
-	}
 	// 405 method not allowed
 	methods := make([]Method, len(n.leaves))
 	i := 0

@@ -60,7 +60,10 @@ func (r RouterFunc) Head(pattern string, handler interface{}, filters ...Filter)
 
 // Any adds a new route binded with all method.
 func (r RouterFunc) Any(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute("ANY", pattern, handler, filters...)
+	for _, method := range Methods {
+		r.AddRoute(method, pattern, handler, filters...)
+	}
+	return nil
 }
 
 // Setter returns a setter-chain to add a new route step-by-step.
