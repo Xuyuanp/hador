@@ -26,11 +26,12 @@ const (
 )
 
 type node struct {
-	segment  string
-	indices  string
-	children []*node
-	ntype    nodeType
-	leaves   map[Method]*Leaf
+	segment    string
+	indices    string
+	children   []*node
+	paramChild *node
+	ntype      nodeType
+	leaves     map[Method]*Leaf
 }
 
 func (n *node) AddRoute(method Method, pattern string, handler interface{}, filters ...Filter) *Leaf {
@@ -57,27 +58,40 @@ func min(first, second int) int {
 
 func (n *node) addRoute(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
 	if len(n.segment) == 0 {
-		return n.insertChild(method, pattern, handler, filters...)
+		return n.init(method, pattern, handler, filters...)
+	}
+
+	if n.ntype == static {
+		// find longest matched prefix
+		max := min(len(n.segment), len(pattern))
+		i := 0
+		for i < max && pattern[i] == n.segment[i] {
+			i++
+		}
+		n.splitAt(i)
+		return n.insertChild(method, pattern[i:], handler, filters...)
 	}
 
 	if n.ntype == param {
-		return nil
+		i, max := 0, len(pattern)
+		for i < max && pattern[i] != '}' {
+			i++
+		}
+		if i == max {
+			panic("missing '}'")
+		}
+		if n.segment != pattern[:i+1] {
+			panic("conflict param node")
+		}
+		return n.insertChild(method, pattern[i+1:], handler, filters...)
 	}
-
-	// find longest matched prefix
-	max := min(len(n.segment), len(pattern))
-	i := 0
-	for i < max && pattern[i] == n.segment[i] {
-		i++
-	}
-	// if prefix is shorter than n.segment or the pattern is a prefix of n.segment, split current node.
-	if i < max || i == len(pattern) {
-		n.splitAt(i)
-	}
-	return n.insertChild(method, pattern[i:], handler, filters...)
+	return nil
 }
 
 func (n *node) splitAt(index int) {
+	if index >= len(n.segment) {
+		return
+	}
 	next := &node{
 		segment:  n.segment[index:],
 		indices:  n.indices,
@@ -95,28 +109,67 @@ func (n *node) insertChild(method Method, pattern string, handler Handler, filte
 	if len(pattern) == 0 {
 		return n.handle(method, handler, filters...)
 	}
-	if len(n.segment) != 0 {
-		n.indices += pattern[:1]
-		child := &node{}
-		leaf := child.insertChild(method, pattern, handler, filters...)
-		n.children = append(n.children, child)
-		return leaf
+	if pattern[0] == '{' {
+		return n.insertParamChild(method, pattern, handler, filters...)
 	}
-	max := len(pattern)
-	i := 0
+	// insert static child
+	return n.insertStaticChild(method, pattern, handler, filters...)
+}
+
+func (n *node) insertStaticChild(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	for i, ind := range n.indices {
+		if ind == rune(pattern[0]) {
+			return n.children[i].addRoute(method, pattern, handler, filters...)
+		}
+	}
+	n.indices += pattern[:1]
+	child := &node{}
+	n.children = append(n.children, child)
+	return child.addRoute(method, pattern, handler, filters...)
+}
+
+func (n *node) insertParamChild(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	if n.paramChild == nil {
+		n.paramChild = &node{}
+	}
+	return n.paramChild.addRoute(method, pattern, handler, filters...)
+}
+
+func (n *node) init(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	if pattern[0] == '{' {
+		return n.initParam(method, pattern, handler, filters...)
+	}
+	return n.initStatic(method, pattern, handler, filters...)
+}
+
+func (n *node) initStatic(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	i, max := 0, len(pattern)
 	for i < max && pattern[i] != '{' {
 		i++
 	}
 
-	if i == max {
-		n.segment = pattern
-		n.ntype = static
-		n.indices = ""
-		n.children = nil
-		return n.handle(method, handler, filters...)
-	}
+	n.segment = pattern[:i]
+	n.ntype = static
+	n.indices = ""
+	n.children = nil
+	n.leaves = nil
+	return n.insertChild(method, pattern[i:], handler, filters...)
+}
 
-	return nil
+func (n *node) initParam(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	i, max := 0, len(pattern)
+	for i < max && pattern[i] != '}' {
+		i++
+	}
+	if i == max {
+		panic("missing '}'")
+	}
+	n.ntype = param
+	n.segment = pattern[:i+1]
+	n.indices = ""
+	n.children = nil
+	n.leaves = nil
+	return n.insertChild(method, pattern[i+1:], handler, filters...)
 }
 
 func (n *node) handle(method Method, handler Handler, filters ...Filter) *Leaf {
