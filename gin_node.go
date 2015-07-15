@@ -189,6 +189,8 @@ func (n *node) find(method Method, path string) *Leaf {
 	switch n.ntype {
 	case static:
 		return n.findStatic(method, path)
+	case param:
+		return n.findParam(method, path)
 	}
 	return nil
 }
@@ -201,6 +203,7 @@ func (n *node) findStatic(method Method, path string) *Leaf {
 		if n.leaves != nil {
 			return n.leaves[method]
 		}
+		return nil
 	}
 	if path[:len(n.segment)] != n.segment {
 		return nil
@@ -210,6 +213,32 @@ func (n *node) findStatic(method Method, path string) *Leaf {
 		if ind == rune(c) {
 			return n.children[i].find(method, path[len(n.segment):])
 		}
+	}
+	if n.paramChild != nil {
+		return n.paramChild.find(method, path[len(n.segment):])
+	}
+	return nil
+}
+
+func (n *node) findParam(method Method, path string) *Leaf {
+	i, max := 0, len(path)
+	for i < max && path[i] != '/' {
+		i++
+	}
+	if i == max {
+		if n.leaves != nil {
+			return n.leaves[method]
+		}
+		return nil
+	}
+	c := path[i]
+	for index, ind := range n.indices {
+		if ind == rune(c) {
+			return n.children[index].find(method, path[i:])
+		}
+	}
+	if n.paramChild != nil {
+		return n.paramChild.find(method, path[i:])
 	}
 	return nil
 }

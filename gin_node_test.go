@@ -144,5 +144,29 @@ func TestGinNode(t *testing.T) {
 				})
 			})
 		})
+		convey.Convey("Test param", func() {
+			convey.Convey("/param route", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/{name}", func(*Context) {})
+				convey.So(n.find(GET, "/foo"), convey.ShouldEqual, l)
+			})
+			convey.Convey("/static/param route", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/foo/{name}", func(*Context) {})
+				convey.So(n.find(GET, "/foo/bar"), convey.ShouldEqual, l)
+			})
+			convey.Convey("/static/param/static route", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/foo/{name}/bar", func(*Context) {})
+				convey.So(n.find(GET, "/foo/jack/bar"), convey.ShouldEqual, l)
+			})
+			convey.Convey("static and param route", func() {
+				n := &node{}
+				l1 := n.AddRoute(GET, "/foo/{name}", func(*Context) {})
+				l2 := n.AddRoute(GET, "/foo/bar", func(*Context) {})
+				convey.So(n.find(GET, "/foo/bar"), convey.ShouldEqual, l2)
+				convey.So(n.find(GET, "/foo/fuzz"), convey.ShouldEqual, l1)
+			})
+		})
 	})
 }
