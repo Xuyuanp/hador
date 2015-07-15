@@ -40,7 +40,12 @@ func (n *node) AddRoute(method Method, pattern string, handler interface{}, filt
 	if handler == nil {
 		panic("handler should NOT be nil")
 	}
-	return n.addRoute(method, pattern, parseHandler(handler), filters...)
+	for _, m := range Methods {
+		if m == method {
+			return n.addRoute(method, pattern, parseHandler(handler), filters...)
+		}
+	}
+	panic("unknown method: " + method)
 }
 
 func min(first, second int) int {
@@ -55,25 +60,20 @@ func (n *node) addRoute(method Method, pattern string, handler Handler, filters 
 		return n.insertChild(method, pattern, handler, filters...)
 	}
 
+	if n.ntype == param {
+		return nil
+	}
+
 	// find longest matched prefix
 	max := min(len(n.segment), len(pattern))
 	i := 0
 	for i < max && pattern[i] == n.segment[i] {
 		i++
 	}
-	// if shorter than n.segment, split current node and insert the reset pattern to new current node.
-	if i < max {
+	// if prefix is shorter than n.segment or the pattern is a prefix of n.segment, split current node.
+	if i < max || i == len(pattern) {
 		n.splitAt(i)
-		return n.insertChild(method, pattern[i:], handler, filters...)
 	}
-
-	// if pattern is a prefix of n.segment, split current node, current node handle this route.
-	if i == len(pattern) {
-		n.splitAt(i)
-		return n.handle(method, handler, filters...)
-	}
-
-	// if n.segment is a prefix of pattern, insert the reset pattern to current node
 	return n.insertChild(method, pattern[i:], handler, filters...)
 }
 
@@ -92,6 +92,9 @@ func (n *node) splitAt(index int) {
 }
 
 func (n *node) insertChild(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	if len(pattern) == 0 {
+		return n.handle(method, handler, filters...)
+	}
 	if len(n.segment) != 0 {
 		n.indices += pattern[:1]
 		child := &node{}
