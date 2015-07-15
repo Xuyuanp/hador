@@ -99,7 +99,5 @@ func (r RouterFunc) AddController(pattern string, controller ControllerInterface
 }
 
 func newRouter(n *Node) Router {
-	return RouterFunc(func(method Method, pattern string, handler interface{}, filters ...Filter) *Leaf {
-		return n.AddRoute(method, pattern, handler, filters...)
-	})
+	return RouterFunc(n.AddRoute)
 }
