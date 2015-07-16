@@ -26,6 +26,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -187,4 +188,53 @@ func TestResponseWriterFlusher(t *testing.T) {
 		convey.So(ok, convey.ShouldBeTrue)
 		f.Flush()
 	})
+}
+
+func BenchmarkResponseWriter(b *testing.B) {
+	r := httptest.NewRecorder()
+
+	respPool := sync.Pool{
+		New: func() interface{} {
+			return NewResponseWriter(nil)
+		},
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		resp := respPool.Get().(*responseWriter)
+		resp.reset(r)
+
+		respPool.Put(resp)
+	}
+}
+func BenchmarkContext(b *testing.B) {
+	r := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	respPool := sync.Pool{
+		New: func() interface{} {
+			return NewResponseWriter(nil)
+		},
+	}
+	ctxPool := sync.Pool{
+		New: func() interface{} {
+			return newContext(nil)
+		},
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		resp := respPool.Get().(*responseWriter)
+		resp.reset(r)
+
+		ctx := ctxPool.Get().(*Context)
+		ctx.reset(resp, req)
+
+		ctxPool.Put(ctx)
+		respPool.Put(resp)
+	}
 }

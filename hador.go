@@ -31,7 +31,7 @@ type Hador struct {
 	Router
 	*FilterChain
 	Logger Logger
-	root   *Node
+	root   *node
 
 	ctxPool  sync.Pool
 	respPool sync.Pool
@@ -53,8 +53,8 @@ func New() *Hador {
 			Produces:    []string{},
 		},
 	}
-	h.root = NewNode(h, "", 0)
-	h.Router = newRouter(h.root)
+	h.root = &node{}
+	h.Router = RouterFunc(h.root.AddRoute)
 	h.FilterChain = NewFilterChain(h.root)
 
 	h.ctxPool.New = func() interface{} {
@@ -113,7 +113,7 @@ func (h *Hador) AddFilters(filters ...Filter) *Hador {
 
 func (h *Hador) travel() []*Leaf {
 	llist := list.New()
-	h.root.travel(llist)
+	// h.root.travel(llist)
 
 	leaves := make([]*Leaf, llist.Len())
 	i := 0
@@ -170,4 +170,8 @@ func (h *Hador) Swagger(config swagger.Config) *Leaf {
 // SwaggerDocument returns swagger.Document of this Hador.
 func (h *Hador) SwaggerDocument() *swagger.Document {
 	return h.Document
+}
+
+func (h *Hador) ShowGraph() {
+	h.root.travel("")
 }

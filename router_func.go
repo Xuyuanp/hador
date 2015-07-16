@@ -97,7 +97,3 @@ func (r RouterFunc) AddController(pattern string, controller ControllerInterface
 		}
 	}, filters...)
 }
-
-func newRouter(n *Node) Router {
-	return RouterFunc(n.AddRoute)
-}

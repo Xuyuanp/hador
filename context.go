@@ -39,6 +39,8 @@ type Context struct {
 	errHandlers   map[int]func(...interface{})
 	Err4XXHandler func(int, ...interface{})
 	Err5XXHandler func(int, ...interface{})
+
+	path string
 }
 
 func newContext(logger Logger) *Context {
@@ -56,17 +58,7 @@ func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.Err4XXHandler = nil
 	ctx.Err5XXHandler = nil
 
-	ctx.currPath = trimPath(req.URL.Path)
-}
-
-func trimPath(path string) string {
-	if len(path) > 0 && path[0] == '/' {
-		path = path[1:]
-	}
-	if len(path) > 0 && path[len(path)-1] == '/' {
-		path = path[:len(path)-1]
-	}
-	return path
+	ctx.path = req.URL.Path
 }
 
 // OnError handles http error by calling handler registered in SetErrorHandler methods.
