@@ -59,6 +59,9 @@ func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.Err5XXHandler = nil
 
 	ctx.path = req.URL.Path
+	if len(ctx.path) > 1 && ctx.path[len(ctx.path)-1] == '/' {
+		ctx.path = ctx.path[:len(ctx.path)-1]
+	}
 }
 
 // OnError handles http error by calling handler registered in SetErrorHandler methods.
