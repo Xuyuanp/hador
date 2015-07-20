@@ -280,7 +280,6 @@ func (n *node) findParam(method Method, path string) *Leaf {
 }
 
 func (n *node) Serve(ctx *Context) {
-	// ctx.Logger.Debug("%s", ctx.Request.RequestURI)
 	switch n.ntype {
 	case static:
 		n.serveStatic(ctx)
@@ -296,7 +295,7 @@ func (n *node) serveParam(ctx *Context) {
 		i++
 	}
 	if i == max {
-		ctx.Params()[n.segment[1:len(n.segment)-1]] = path[:i]
+		ctx.Params()[n.paramName] = path[:i]
 		n.doServe(ctx)
 		return
 	}
@@ -304,14 +303,14 @@ func (n *node) serveParam(ctx *Context) {
 	for index, ind := range n.indices {
 		if ind == rune(c) {
 			ctx.path = ctx.path[i:]
-			ctx.Params()[n.segment[1:len(n.segment)-1]] = path[:i]
+			ctx.Params()[n.paramName] = path[:i]
 			n.children[index].Serve(ctx)
 			return
 		}
 	}
 	if n.paramChild != nil {
 		ctx.path = ctx.path[1:]
-		ctx.Params()[n.segment[1:len(n.segment)-1]] = path[:i]
+		ctx.Params()[n.paramName] = path[:i]
 		n.paramChild.Serve(ctx)
 		return
 	}
