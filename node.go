@@ -303,26 +303,26 @@ func (n *node) serveParam(ctx *Context) {
 func (n *node) serveStatic(ctx *Context) {
 	path := ctx.path
 	if len(path) < len(n.segment) {
-		if n.paramChild != nil {
-			n.paramChild.Serve(ctx)
-			return
-		}
 		ctx.OnError(http.StatusNotFound)
 		return
 	}
-	if path == n.segment {
+	i, seglen := 0, len(n.segment)
+	for i < seglen && n.segment[i] == path[i] {
+		i++
+	}
+	if i < seglen {
+		ctx.OnError(http.StatusNotFound)
+		return
+	}
+	if i == len(path) {
 		n.doServe(ctx)
 		return
 	}
-	if path[:len(n.segment)] != n.segment {
-		ctx.OnError(http.StatusNotFound)
-		return
-	}
-	c := path[len(n.segment)]
-	for i, ind := range n.indices {
+	c := path[seglen]
+	for index, ind := range n.indices {
 		if ind == rune(c) {
-			ctx.path = ctx.path[len(n.segment):]
-			n.children[i].Serve(ctx)
+			ctx.path = ctx.path[seglen:]
+			n.children[index].Serve(ctx)
 			return
 		}
 	}
