@@ -19,6 +19,7 @@ package hador
 
 import (
 	"container/list"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -170,4 +171,15 @@ func (h *Hador) Swagger(config swagger.Config) *Leaf {
 // SwaggerDocument returns swagger.Document of this Hador.
 func (h *Hador) SwaggerDocument() *swagger.Document {
 	return h.Document
+}
+
+func (h *Hador) showGraph() {
+	leaves := h.travel()
+	for _, l := range leaves {
+		fmt.Println(l.Path())
+	}
+}
+
+func (h *Hador) _showGraph() {
+	h.root._travel("")
 }

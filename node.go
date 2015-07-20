@@ -19,6 +19,7 @@ package hador
 
 import (
 	"container/list"
+	"fmt"
 	"net/http"
 	"regexp"
 )
@@ -118,6 +119,14 @@ func (n *node) splitAt(index int) {
 		leaves:     n.leaves,
 		ntype:      n.ntype,
 		paramChild: n.paramChild,
+	}
+	if next.children != nil {
+		for _, ch := range next.children {
+			ch.parent = next
+		}
+	}
+	if next.paramChild != nil {
+		next.paramChild.parent = next
 	}
 	n.indices = n.segment[index : index+1]
 	n.segment = n.segment[:index]
@@ -388,6 +397,21 @@ func (n *node) path() string {
 		return n.parent.path() + path
 	}
 	return path
+}
+
+func (n *node) _travel(path string) {
+	path += n.segment
+	for m, l := range n.leaves {
+		if path != l.path {
+			fmt.Printf("%s %s ===== %s\n", m, path, l.Path())
+		}
+	}
+	for _, child := range n.children {
+		child._travel(path)
+	}
+	if n.paramChild != nil {
+		n.paramChild._travel(path)
+	}
 }
 
 func readParam(pattern string) (name, regstr, dataType, desc, rest string) {
