@@ -18,7 +18,7 @@
 package hador
 
 import (
-	"fmt"
+	"container/list"
 	"net/http"
 )
 
@@ -355,16 +355,15 @@ func (n *node) doServe(ctx *Context) {
 	ctx.OnError(http.StatusMethodNotAllowed, methods)
 }
 
-func (n *node) travel(path string) {
-	path += n.segment
-	for m, _ := range n.leaves {
-		fmt.Printf("%s %s\n", m, path)
+func (n *node) travel(llist *list.List) {
+	for _, l := range n.leaves {
+		llist.PushBack(l)
 	}
 
 	for _, child := range n.children {
-		child.travel(path)
+		child.travel(llist)
 	}
 	if n.paramChild != nil {
-		n.paramChild.travel(path)
+		n.paramChild.travel(llist)
 	}
 }
