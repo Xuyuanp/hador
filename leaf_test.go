@@ -17,21 +17,24 @@
 
 package hador
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/smartystreets/goconvey/convey"
+)
 
 func TestLeaf(t *testing.T) {
-	// return
-	// convey.Convey("Test Leaf", t, func() {
-	// 	h := New()
-	// 	handler := newSimpleHandler("swagger")
-	// 	leaf := h.Get("/swagger", handler)
-	// 	convey.So(leaf, convey.ShouldNotBeNil)
-	// 	convey.So(leaf.Handler(), convey.ShouldEqual, handler)
-	// 	convey.So(leaf.Method(), convey.ShouldEqual, GET)
-	// 	parent := leaf.Parent()
-	// 	for parent != nil && parent.Parent() != nil {
-	// 		parent = parent.Parent()
-	// 	}
-	// 	convey.So(parent, convey.ShouldEqual, h.root)
-	// })
+	convey.Convey("Test Leaf", t, func() {
+		h := New()
+		handler := newSimpleHandler("swagger")
+		leaf := h.Get("/swagger", handler)
+		convey.So(leaf, convey.ShouldNotBeNil)
+		convey.So(leaf.Handler(), convey.ShouldEqual, handler)
+		convey.So(leaf.Method(), convey.ShouldEqual, GET)
+		parent := leaf.parent
+		for parent != nil && parent.parent != nil {
+			parent = parent.parent
+		}
+		convey.So(parent, convey.ShouldEqual, h.root)
+	})
 }

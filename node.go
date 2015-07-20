@@ -31,6 +31,7 @@ const (
 )
 
 type node struct {
+	parent     *node
 	segment    string
 	indices    string
 	children   []*node
@@ -104,6 +105,7 @@ func (n *node) splitAt(index int) {
 		return
 	}
 	next := &node{
+		parent:     n,
 		segment:    n.segment[index:],
 		indices:    n.indices,
 		children:   n.children,
@@ -135,14 +137,14 @@ func (n *node) insertStaticChild(method Method, pattern string, handler Handler,
 		}
 	}
 	n.indices += pattern[:1]
-	child := &node{}
+	child := &node{parent: n}
 	n.children = append(n.children, child)
 	return child.addRoute(method, pattern, handler, filters...)
 }
 
 func (n *node) insertParamChild(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
 	if n.paramChild == nil {
-		n.paramChild = &node{}
+		n.paramChild = &node{parent: n}
 	}
 	return n.paramChild.addRoute(method, pattern, handler, filters...)
 }
@@ -366,4 +368,11 @@ func (n *node) travel(llist *list.List) {
 	if n.paramChild != nil {
 		n.paramChild.travel(llist)
 	}
+}
+
+func (n *node) path() string {
+	if n.parent != nil {
+		return n.parent.path() + n.segment
+	}
+	return n.segment
 }

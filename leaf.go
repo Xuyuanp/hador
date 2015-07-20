@@ -22,7 +22,6 @@ import "github.com/Xuyuanp/hador/swagger"
 // Leaf struct
 type Leaf struct {
 	*FilterChain
-	h       *Hador
 	parent  *node
 	path    string
 	handler Handler
@@ -35,9 +34,8 @@ type Leaf struct {
 // NewLeaf creates new Leaf instance
 func NewLeaf(parent *node, method Method, handler Handler) *Leaf {
 	l := &Leaf{
-		// h:       parent.h,
-		// parent:  parent,
-		// path:    parent.Path(),
+		parent:  parent,
+		path:    parent.path(),
 		method:  method,
 		handler: handler,
 	}
