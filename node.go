@@ -20,6 +20,7 @@ package hador
 import (
 	"container/list"
 	"net/http"
+	"regexp"
 )
 
 type nodeType int
@@ -38,6 +39,11 @@ type node struct {
 	paramChild *node
 	ntype      nodeType
 	leaves     map[Method]*Leaf
+
+	paramName     string
+	paramReg      *regexp.Regexp
+	paramDataType string
+	paramDesc     string
 }
 
 func (n *node) AddRoute(method Method, pattern string, handler interface{}, filters ...Filter) *Leaf {
@@ -174,22 +180,23 @@ func (n *node) initStatic(method Method, pattern string, handler Handler, filter
 }
 
 func (n *node) initParam(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
-	i, max := 0, len(pattern)
-	for i < max && pattern[i] != '}' {
-		i++
+	name, regstr, dataType, desc, rest := readParam(pattern)
+	if len(name) == 0 {
+		panic("empty param name")
 	}
-	if i == max {
-		panic("missing '}'")
+	n.paramName = name
+	if len(regstr) > 0 {
+		n.paramReg = regexp.MustCompile(regstr)
 	}
-	if i < max-1 && pattern[i+1] != '/' {
-		panic("'}' should be before '/'")
-	}
+	n.paramDataType = dataType
+	n.paramDesc = desc
+
 	n.ntype = param
-	n.segment = pattern[:i+1]
+	n.segment = pattern[:len(pattern)-len(rest)]
 	n.indices = ""
 	n.children = nil
 	n.leaves = nil
-	return n.insertChild(method, pattern[i+1:], handler, filters...)
+	return n.insertChild(method, rest, handler, filters...)
 }
 
 func (n *node) handle(method Method, handler Handler, filters ...Filter) *Leaf {
@@ -371,8 +378,61 @@ func (n *node) travel(llist *list.List) {
 }
 
 func (n *node) path() string {
-	if n.parent != nil {
-		return n.parent.path() + n.segment
+	var path string
+	if n.ntype == static {
+		path = n.segment
+	} else if n.ntype == param {
+		path = "{" + n.paramName + "}"
 	}
-	return n.segment
+	if n.parent != nil {
+		return n.parent.path() + path
+	}
+	return path
+}
+
+func readParam(pattern string) (name, regstr, dataType, desc, rest string) {
+	dataType = "string"
+	field, rest, end := readField(pattern[1:])
+	name = field
+	if end || len(rest) == 0 {
+		return
+	}
+
+	field, rest, end = readField(rest)
+	regstr = field
+	if end || len(rest) == 0 {
+		return
+	}
+
+	field, rest, end = readField(rest)
+	if len(field) > 0 {
+		dataType = field
+	}
+	if end || len(rest) == 0 {
+		return
+	}
+
+	field, rest, end = readField(rest)
+	desc = field
+	if !end {
+		panic("missing '}'")
+	}
+
+	return
+}
+
+func readField(pattern string) (field, rest string, end bool) {
+	i, max := 0, len(pattern)
+	for i < max {
+		if pattern[i] == ':' {
+			return pattern[:i], pattern[i+1:], false
+		} else if pattern[i] == '}' {
+			if i < max-1 && pattern[i+1] != '/' {
+				panic("'}' should be before '/' or at the end")
+			}
+			return pattern[:i], pattern[i+1:], true
+		}
+		i++
+	}
+	panic("'}' should be before '/' or at the end")
 }

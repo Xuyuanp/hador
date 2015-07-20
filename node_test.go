@@ -376,6 +376,62 @@ func TestGinNode(t *testing.T) {
 				convey.So(resp.Body.String(), convey.ShouldEqual, "jack")
 			})
 		})
+		convey.Convey("Test readField", func() {
+			convey.Convey("Test end", func() {
+				str := `{age:\d+:integer:your age}`
+				field, rest, end := readField(str[1:])
+				convey.So(field, convey.ShouldEqual, "age")
+				convey.So(rest, convey.ShouldEqual, `\d+:integer:your age}`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `\d+`)
+				convey.So(rest, convey.ShouldEqual, `integer:your age}`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `integer`)
+				convey.So(rest, convey.ShouldEqual, `your age}`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `your age`)
+				convey.So(rest, convey.ShouldEqual, ``)
+				convey.So(end, convey.ShouldBeTrue)
+			})
+			convey.Convey("Test not end", func() {
+				str := `{age:\d+:integer:your age}/hello`
+				field, rest, end := readField(str[1:])
+				convey.So(field, convey.ShouldEqual, "age")
+				convey.So(rest, convey.ShouldEqual, `\d+:integer:your age}/hello`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `\d+`)
+				convey.So(rest, convey.ShouldEqual, `integer:your age}/hello`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `integer`)
+				convey.So(rest, convey.ShouldEqual, `your age}/hello`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `your age`)
+				convey.So(rest, convey.ShouldEqual, `/hello`)
+				convey.So(end, convey.ShouldBeTrue)
+			})
+		})
+
+		convey.Convey("Test readParam", func() {
+			str := `{age:\d+:integer:your age}/hello`
+			name, regstr, dataType, desc, rest := readParam(str)
+			convey.So(name, convey.ShouldEqual, "age")
+			convey.So(regstr, convey.ShouldEqual, `\d+`)
+			convey.So(dataType, convey.ShouldEqual, "integer")
+			convey.So(desc, convey.ShouldEqual, "your age")
+			convey.So(rest, convey.ShouldEqual, "/hello")
+		})
 	})
 }
 
