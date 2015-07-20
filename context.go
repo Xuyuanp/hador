@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -206,7 +207,7 @@ func (ctx *Context) WriteStatus(p []byte, status ...int) (n int, err error) {
 
 // WriteString writes string into response by calling ctx.Write method.
 func (ctx *Context) WriteString(s string) (n int, err error) {
-	return ctx.Write([]byte(s))
+	return io.WriteString(ctx.Response, s)
 }
 
 // RenderJSON renders v in JSON format and sets status if provided.
