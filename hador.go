@@ -56,10 +56,12 @@ func New() *Hador {
 	}
 	h.root = &node{}
 	h.Router = RouterFunc(h.root.AddRoute)
-	h.FilterChain = NewFilterChain(h.root)
+	h.FilterChain = NewFilterChain(h)
 
 	h.ctxPool.New = func() interface{} {
-		return newContext(h.Logger)
+		ctx := newContext(h.Logger)
+		ctx.params = make(Params, h.root.findMaxParams())
+		return ctx
 	}
 	h.respPool.New = func() interface{} {
 		return NewResponseWriter(nil)
@@ -91,19 +93,48 @@ func (h *Hador) RunTLS(addr, sertFile, keyFile string) error {
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	resp := h.respPool.Get().(*responseWriter)
 	resp.reset(w)
+
+	ctx := h.ctxPool.Get().(*Context)
+	ctx.reset(resp, req)
+
+	h.FilterChain.Serve(ctx)
+
+	h.ctxPool.Put(ctx)
+	h.respPool.Put(resp)
+}
+
+func (h *Hador) _ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	resp := h.respPool.Get().(*responseWriter)
+	resp.reset(w)
 	defer h.respPool.Put(resp)
 
 	ctx := h.ctxPool.Get().(*Context)
 	ctx.reset(resp, req)
 	defer h.ctxPool.Put(ctx)
 
-	h.Serve(ctx)
+	h.root.match(Method(req.Method), req.URL.Path, ctx.Params())
 }
 
 // Serve implements Handler interface
 func (h *Hador) Serve(ctx *Context) {
-	ctx.SetHeader("Server", "Hador/"+Version)
-	h.FilterChain.Serve(ctx)
+	method := Method(ctx.Request.Method)
+	path := ctx.Request.URL.Path
+	if len(path) > 1 && path[len(path)-1] == '/' {
+		path = path[:len(path)-1]
+	}
+	params, leaf, err := h.root.match(method, path, ctx.Params())
+	if err != nil {
+		status := http.StatusNotFound
+		if e, ok := err.(HTTPError); ok {
+			status = int(e)
+		} else {
+			h.Logger.Error("unexpected error: %s", err)
+		}
+		ctx.OnError(status)
+		return
+	}
+	ctx.params = params
+	leaf.Serve(ctx)
 }
 
 // AddFilters reuses FilterChain's AddFilters method and returns self

@@ -20,7 +20,6 @@ package hador
 import (
 	"container/list"
 	"fmt"
-	"net/http"
 	"regexp"
 )
 
@@ -221,155 +220,97 @@ func (n *node) handle(method Method, handler Handler, filters ...Filter) *Leaf {
 	return l
 }
 
-func (n *node) find(method Method, path string) *Leaf {
+func (n *node) findMaxParams() int {
+	base := 0
+	if n.ntype == param {
+		base = 1
+	}
+	max := 0
+	for _, ch := range n.children {
+		if submax := ch.findMaxParams(); submax > max {
+			max = submax
+		}
+	}
+	if n.paramChild != nil {
+		if submax := n.paramChild.findMaxParams(); submax > max {
+			max = submax
+		}
+	}
+	return max + base
+}
+
+func (n *node) match(method Method, path string, params Params) (Params, *Leaf, error) {
 	switch n.ntype {
 	case static:
-		return n.findStatic(method, path)
+		return n.matchStatic(method, path, params)
 	case param:
-		return n.findParam(method, path)
+		return n.matchParam(method, path, params)
 	}
-	return nil
+	return params, nil, err404
 }
 
-func (n *node) findStatic(method Method, path string) *Leaf {
+func (n *node) matchLeaf(method Method) (*Leaf, error) {
+	if len(n.leaves) == 0 {
+		return nil, err404
+	}
+	// method matches
+	if l, ok := n.leaves[method]; ok {
+		return l, nil
+	}
+	return nil, err405
+}
+
+func (n *node) matchStatic(method Method, path string, params Params) (Params, *Leaf, error) {
 	if len(path) < len(n.segment) {
-		return nil
-	}
-	if path == n.segment {
-		if n.leaves != nil {
-			return n.leaves[method]
-		}
-		return nil
-	}
-	if path[:len(n.segment)] != n.segment {
-		return nil
-	}
-	c := path[len(n.segment)]
-	for i, ind := range n.indices {
-		if ind == rune(c) {
-			return n.children[i].find(method, path[len(n.segment):])
-		}
-	}
-	if n.paramChild != nil {
-		return n.paramChild.find(method, path[len(n.segment):])
-	}
-	return nil
-}
-
-func (n *node) findParam(method Method, path string) *Leaf {
-	i, max := 0, len(path)
-	for i < max && path[i] != '/' {
-		i++
-	}
-	if i == max {
-		if n.leaves != nil {
-			return n.leaves[method]
-		}
-		return nil
-	}
-	c := path[i]
-	for index, ind := range n.indices {
-		if ind == rune(c) {
-			return n.children[index].find(method, path[i:])
-		}
-	}
-	if n.paramChild != nil {
-		return n.paramChild.find(method, path[i:])
-	}
-	return nil
-}
-
-func (n *node) Serve(ctx *Context) {
-	switch n.ntype {
-	case static:
-		n.serveStatic(ctx)
-	case param:
-		n.serveParam(ctx)
-	}
-}
-
-func (n *node) serveParam(ctx *Context) {
-	path := ctx.path
-	i, max := 0, len(path)
-	for i < max && path[i] != '/' {
-		i++
-	}
-	if i == max {
-		ctx.Params()[n.paramName] = path[:i]
-		n.doServe(ctx)
-		return
-	}
-	c := path[i]
-	for index, ind := range n.indices {
-		if ind == rune(c) {
-			ctx.path = ctx.path[i:]
-			ctx.Params()[n.paramName] = path[:i]
-			n.children[index].Serve(ctx)
-			return
-		}
-	}
-	if n.paramChild != nil {
-		ctx.path = ctx.path[1:]
-		ctx.Params()[n.paramName] = path[:i]
-		n.paramChild.Serve(ctx)
-		return
-	}
-	return
-}
-
-func (n *node) serveStatic(ctx *Context) {
-	path := ctx.path
-	if len(path) < len(n.segment) {
-		ctx.OnError(http.StatusNotFound)
-		return
+		return params, nil, err404
 	}
 	i, seglen := 0, len(n.segment)
 	for i < seglen && n.segment[i] == path[i] {
 		i++
 	}
 	if i < seglen {
-		ctx.OnError(http.StatusNotFound)
-		return
+		return params, nil, err404
 	}
 	if i == len(path) {
-		n.doServe(ctx)
-		return
+		l, err := n.matchLeaf(method)
+		return params, l, err
 	}
 	c := path[seglen]
 	for index, ind := range n.indices {
 		if ind == rune(c) {
-			ctx.path = ctx.path[seglen:]
-			n.children[index].Serve(ctx)
-			return
+			return n.children[index].match(method, path[seglen:], params)
 		}
 	}
 	if n.paramChild != nil {
-		ctx.path = ctx.path[len(n.segment):]
-		n.paramChild.Serve(ctx)
-		return
+		return n.paramChild.match(method, path[seglen:], params)
 	}
-	ctx.OnError(http.StatusNotFound)
+	return params, nil, err404
 }
 
-func (n *node) doServe(ctx *Context) {
-	// 404 not found
-	if len(n.leaves) == 0 {
-		ctx.OnError(http.StatusNotFound)
-		return
-	}
-	// method matches
-	if l, ok := n.leaves[Method(ctx.Request.Method)]; ok {
-		l.Serve(ctx)
-		return
-	}
-	// 405 method not allowed
-	methods := make([]Method, len(n.leaves))
-	i := 0
-	for m := range n.leaves {
-		methods[i] = m
+func (n *node) matchParam(method Method, path string, params Params) (Params, *Leaf, error) {
+	i, max := 0, len(path)
+	for i < max && path[i] != '/' {
 		i++
 	}
-	ctx.OnError(http.StatusMethodNotAllowed, methods)
+
+	params = params[:len(params)+1]
+	params[len(params)-1].Key = n.paramName
+	params[len(params)-1].Value = path[:i]
+
+	if i == max {
+		l, err := n.matchLeaf(method)
+		return params, l, err
+	}
+	c := path[i]
+	for index, ind := range n.indices {
+		if ind == rune(c) {
+			return n.children[index].match(method, path[i:], params)
+		}
+	}
+	if n.paramChild != nil {
+		return n.paramChild.match(method, path[:i], params)
+	}
+	return params, nil, err404
 }
 
 func (n *node) travel(llist *list.List) {

@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 // Context struct
@@ -51,16 +50,11 @@ func newContext(logger Logger) *Context {
 func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.Request = req
 	ctx.Response = w
-	ctx.params = nil
+	ctx.params = ctx.params[0:0]
 	ctx.data = nil
 	ctx.errHandlers = nil
 	ctx.Err4XXHandler = nil
 	ctx.Err5XXHandler = nil
-
-	ctx.path = req.URL.Path
-	if len(ctx.path) > 1 && ctx.path[len(ctx.path)-1] == '/' {
-		ctx.path = ctx.path[:len(ctx.path)-1]
-	}
 }
 
 // OnError handles http error by calling handler registered in SetErrorHandler methods.
@@ -87,18 +81,6 @@ func (ctx *Context) OnError(status int, args ...interface{}) {
 		return
 	}
 
-	// use default http error
-	switch status {
-	case http.StatusMethodNotAllowed:
-		// set Allow header for 405
-		if len(args) > 0 {
-			if allows, ok := args[0].([]string); ok && len(allows) > 0 {
-				ctx.SetHeader("Allow",
-					strings.Join(allows, ","))
-				args = args[1:]
-			}
-		}
-	}
 	if !ctx.Response.Written() {
 		text := http.StatusText(status)
 		if len(args) > 0 {
@@ -119,7 +101,7 @@ func (ctx *Context) SetErrorHandler(status int, handler func(...interface{})) {
 // Params returns params lazy-init
 func (ctx *Context) Params() Params {
 	if ctx.params == nil {
-		ctx.params = make(Params)
+		ctx.params = make(Params, 10)[0:0]
 	}
 	return ctx.params
 }

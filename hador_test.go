@@ -54,6 +54,14 @@ func TestHodor(t *testing.T) {
 			h.ServeHTTP(resp, req)
 			convey.So(resp.Body.String(), convey.ShouldEqual, "before")
 		})
+		convey.Convey("Test bench", func() {
+			h := New()
+			h.Get("/hello/", newSimpleHandler("hello"))
+			resp := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/hello/", nil)
+			h.ServeHTTP(resp, req)
+			convey.So(resp.Body.String(), convey.ShouldEqual, "hello")
+		})
 		convey.Convey("Test swagger", func() {
 			h.Get("/hello", newSimpleHandler("hello")).
 				SwaggerOperation().
