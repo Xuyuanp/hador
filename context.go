@@ -35,8 +35,6 @@ type Context struct {
 	data   map[string]interface{}
 	Logger Logger
 
-	currPath string
-
 	errHandlers   map[int]func(...interface{})
 	Err4XXHandler func(int, ...interface{})
 	Err5XXHandler func(int, ...interface{})
@@ -116,18 +114,6 @@ func (ctx *Context) SetErrorHandler(status int, handler func(...interface{})) {
 		ctx.errHandlers = make(map[int]func(...interface{}))
 	}
 	ctx.errHandlers[status] = handler
-}
-
-func (ctx *Context) segment() string {
-	index := strings.Index(ctx.currPath, "/")
-	if index == -1 {
-		segment := ctx.currPath
-		ctx.currPath = ""
-		return segment
-	}
-	segment := ctx.currPath[:index]
-	ctx.currPath = ctx.currPath[index+1:]
-	return segment
 }
 
 // Params returns params lazy-init

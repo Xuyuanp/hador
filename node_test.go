@@ -8,8 +8,8 @@ import (
 	"github.com/smartystreets/goconvey/convey"
 )
 
-func TestGinNode(t *testing.T) {
-	convey.Convey("Test gin_node", t, func() {
+func TestNode(t *testing.T) {
+	convey.Convey("Test node", t, func() {
 		convey.Convey("Test AddRoute", func() {
 			convey.Convey("Test static", func() {
 				convey.Convey("single route", func() {
