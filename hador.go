@@ -93,26 +93,13 @@ func (h *Hador) RunTLS(addr, sertFile, keyFile string) error {
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	resp := h.respPool.Get().(*responseWriter)
 	resp.reset(w)
-
-	ctx := h.ctxPool.Get().(*Context)
-	ctx.reset(resp, req)
-
-	h.FilterChain.Serve(ctx)
-
-	h.ctxPool.Put(ctx)
-	h.respPool.Put(resp)
-}
-
-func (h *Hador) _ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	resp := h.respPool.Get().(*responseWriter)
-	resp.reset(w)
 	defer h.respPool.Put(resp)
 
 	ctx := h.ctxPool.Get().(*Context)
 	ctx.reset(resp, req)
 	defer h.ctxPool.Put(ctx)
 
-	h.root.match(Method(req.Method), req.URL.Path, ctx.Params())
+	h.FilterChain.Serve(ctx)
 }
 
 // Serve implements Handler interface

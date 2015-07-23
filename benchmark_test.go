@@ -193,17 +193,3 @@ func BenchmarkRenderJSON(b *testing.B) {
 
 	runRequest(b, h, "GET", "/ping")
 }
-
-func BenchmarkEmptyServeHTTP(b *testing.B) {
-	h := New()
-
-	req, _ := http.NewRequest("GET", "/", nil)
-	resp := httptest.NewRecorder()
-
-	b.ResetTimer()
-	b.ReportAllocs()
-
-	for i := 0; i < b.N; i++ {
-		h._ServeHTTP(resp, req)
-	}
-}
