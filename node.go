@@ -293,6 +293,10 @@ func (n *node) matchParam(method Method, path string, params Params) (Params, *L
 		i++
 	}
 
+	if n.paramReg != nil && !n.paramReg.MatchString(path[:i]) {
+		return params, nil, err404
+	}
+
 	params = params[:len(params)+1]
 	params[len(params)-1].Key = n.paramName
 	params[len(params)-1].Value = path[:i]

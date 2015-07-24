@@ -159,6 +159,19 @@ func TestNode(t *testing.T) {
 				convey.So(err, convey.ShouldBeNil)
 				convey.So(lr, convey.ShouldEqual, l)
 			})
+			convey.Convey("param with regexp", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/hello/{name:\\d+}", func(_ *Context) {})
+				maxParams := n.findMaxParams()
+				convey.So(maxParams, convey.ShouldEqual, 1)
+				params := make(Params, maxParams)
+				_, lr, err := n.match(GET, "/hello/jack", params[0:0])
+				convey.So(err, convey.ShouldEqual, err404)
+
+				_, lr, err = n.match(GET, "/hello/123", params[0:0])
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(lr, convey.ShouldEqual, l)
+			})
 		})
 
 		convey.Convey("Test findMaxParams", func() {
