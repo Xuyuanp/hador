@@ -1,9 +1,5 @@
 package hador
 
-import (
-	"github.com/Xuyuanp/hador/swagger"
-)
-
 // RouterFunc is a function type implemented Router interface.
 type RouterFunc func(method Method, pattern string, handler interface{}, filters ...Filter) *Leaf
 
@@ -70,8 +66,8 @@ func (r RouterFunc) Any(pattern string, handler interface{}, filters ...Filter) 
 func (r RouterFunc) Setter() MethodSetter {
 	return func(method Method) PatternSetter {
 		return func(pattern string) HandlerSetter {
-			return func(handler interface{}, filters ...Filter) *swagger.Operation {
-				return r.AddRoute(method, pattern, handler, filters...).SwaggerOperation()
+			return func(handler interface{}, filters ...Filter) *Leaf {
+				return r.AddRoute(method, pattern, handler, filters...)
 			}
 		}
 	}
