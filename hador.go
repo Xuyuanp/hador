@@ -73,8 +73,10 @@ func New() *Hador {
 // Default creates Hador instance with default filters(LogFilter, RecoveryFilter)
 func Default() *Hador {
 	h := New()
-	h.Before(NewLogFilter(h.Logger))
-	h.Before(NewRecoveryFilter(h.Logger))
+	h.AddFilters(
+		NewLogFilter(h.Logger),
+		NewRecoveryFilter(h.Logger),
+	)
 	return h
 }
 
@@ -151,6 +153,17 @@ func (h *Hador) travelPaths() swagger.Paths {
 		if leaf.DocIgnored || leaf.method == "ANY" {
 			continue
 		}
+		parent := leaf.parent
+		for parent != nil {
+			if parent.ntype == param {
+				leaf.SwaggerOperation().DocParameterPath(
+					parent.paramName,
+					parent.paramDataType,
+					parent.paramDesc,
+					true)
+			}
+			parent = parent.parent
+		}
 
 		spath, ok := spaths[leaf.Path()]
 		if !ok {
@@ -165,8 +178,8 @@ func (h *Hador) travelPaths() swagger.Paths {
 
 // SwaggerHandler returns swagger json api handler
 func (h *Hador) SwaggerHandler() Handler {
+	h.Document.Paths = h.travelPaths()
 	return HandlerFunc(func(ctx *Context) {
-		h.Document.Paths = h.travelPaths()
 		ctx.RenderJSON(h.Document)
 	})
 }
@@ -181,7 +194,7 @@ func (h *Hador) Swagger(config SwaggerConfig) *Leaf {
 	if config.UIFilePath != "" {
 		s := NewStatic(http.Dir(config.UIFilePath))
 		s.Prefix = config.UIPrefix
-		h.Before(s)
+		h.AddFilters(s)
 	}
 
 	return leaf
