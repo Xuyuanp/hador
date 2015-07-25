@@ -166,15 +166,15 @@ func (h *Hador) travelPaths() swagger.Paths {
 func (h *Hador) SwaggerHandler() Handler {
 	return HandlerFunc(func(ctx *Context) {
 		h.Document.Paths = h.travelPaths()
-		ctx.SetHeader("Content-Type", "application/json; charset-utf8")
 		ctx.RenderJSON(h.Document)
 	})
 }
 
 // Swagger setups swagger config, returns json API path Leaf
-func (h *Hador) Swagger(config swagger.Config) *Leaf {
+func (h *Hador) Swagger(config SwaggerConfig) *Leaf {
 	// handle API path
-	leaf := h.Get(config.APIPath, h.SwaggerHandler()).DocIgnore(!config.SelfDocEnabled)
+	leaf := h.Get(config.APIPath, h.SwaggerHandler()).
+		DocIgnore(!config.SelfDocEnabled)
 
 	// serve swagger-ui file
 	if config.UIFilePath != "" {

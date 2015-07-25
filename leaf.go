@@ -39,6 +39,18 @@ func NewLeaf(parent *node, method Method, handler Handler) *Leaf {
 		method:  method,
 		handler: handler,
 	}
+
+	for parent != nil {
+		if parent.ntype == param {
+			l.SwaggerOperation().DocParameterPath(
+				parent.paramName,
+				parent.paramDataType,
+				parent.paramDesc,
+				true)
+		}
+		parent = parent.parent
+	}
+
 	l.FilterChain = NewFilterChain(l.handler)
 	return l
 }
@@ -57,11 +69,6 @@ func (l *Leaf) Method() Method {
 func (l *Leaf) Handler() Handler {
 	return l.handler
 }
-
-// Parent returns parent node of leaf
-// func (l *Leaf) Parent() *Node {
-// 	return l.parent
-// }
 
 // AddFilters add filters into FilterChain
 func (l *Leaf) AddFilters(filters ...Filter) *Leaf {

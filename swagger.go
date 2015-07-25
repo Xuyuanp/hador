@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package swagger
+package hador
 
-// Config struct
-type Config struct {
+// SwaggerConfig struct, mirror of swagger.Config
+type SwaggerConfig struct {
 	// UIFilePath is the location of folder containing swagger-ui index.html file. e.g. swagger-ui/dist
 	UIFilePath string
 
