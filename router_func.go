@@ -77,7 +77,10 @@ func (r RouterFunc) Setter() MethodSetter {
 func (r RouterFunc) Group(pattern string, fn func(Router), filters ...Filter) {
 	fn(RouterFunc(
 		func(method Method, subpattern string, handler interface{}, subfilters ...Filter) *Leaf {
-			return r.AddRoute(method, pattern+subpattern, handler, append(filters, subfilters...)...)
+			return r.AddRoute(method,
+				pattern+subpattern,
+				handler,
+				append(filters, subfilters...)...)
 		}))
 }
 
@@ -88,8 +91,9 @@ func (r RouterFunc) AddController(pattern string, controller ControllerInterface
 	r.Group(pattern, func(sub Router) {
 		for _, method := range Methods {
 			handler := handlerForMethod(controller, method)
-			leaf := Handle(sub, method, "/", handler)
-			docMethodForMethod(controller, method)(leaf)
+			leaf := sub.AddRoute(method, "/", handler)
+			docFn := docMethodForMethod(controller, method)
+			docFn(leaf)
 		}
 	}, filters...)
 }

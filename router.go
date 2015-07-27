@@ -77,29 +77,3 @@ type Router interface {
 
 	Group(pattern string, fn func(Router), filters ...Filter)
 }
-
-// Handle adds route for r by calling Router's right method.
-func Handle(r Router, method Method, pattern string, h interface{}, filters ...Filter) *Leaf {
-	var leaf *Leaf
-	switch method {
-	case OPTIONS:
-		leaf = r.Options(pattern, h, filters...)
-	case GET:
-		leaf = r.Get(pattern, h, filters...)
-	case HEAD:
-		leaf = r.Head(pattern, h, filters...)
-	case POST:
-		leaf = r.Post(pattern, h, filters...)
-	case PUT:
-		leaf = r.Put(pattern, h, filters...)
-	case DELETE:
-		leaf = r.Delete(pattern, h, filters...)
-	case TRACE:
-		leaf = r.Trace(pattern, h, filters...)
-	case CONNECT:
-		leaf = r.Connect(pattern, h, filters...)
-	case PATCH:
-		leaf = r.Patch(pattern, h, filters...)
-	}
-	return leaf
-}
