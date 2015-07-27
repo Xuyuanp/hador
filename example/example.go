@@ -70,20 +70,18 @@ func main() {
 				DocParameterBody("user", "user info", User{}, true).
 				DocResponseModel("200", "user info", User{})
 
-			root.Group(`/{user-id:\d+}`, func(userRouter hador.Router) {
+			root.Group(`/{user-id:\d+:integer:user id}`, func(userRouter hador.Router) {
 
 				// GET /v1/users/{user-id}
 				userRouter.Get(`/`, hador.HandlerFunc(getUser)).
 					SwaggerOperation().
 					DocSumDesc("get user info", "").
-					DocParameterPath("user-id", "integer", "user id", true).
 					DocResponseModel("200", "user info", User{})
 
 				// DELETE /v1/users/{user-id}
 				userRouter.Delete(`/`, hador.HandlerFunc(delUser)).
 					SwaggerOperation().
 					DocSumDesc("delete user info", "").
-					DocParameterPath("user-id", "integer", "user id", true).
 					DocResponseModel("200", "user info", User{}).
 					DocResponseSimple("404", "not found")
 
@@ -91,7 +89,6 @@ func main() {
 				userRouter.Put(`/`, hador.HandlerFunc(updateUser)).
 					SwaggerOperation().
 					DocSumDesc("update user info", "").
-					DocParameterPath("user-id", "user id", "integer", true).
 					DocParameterBody("user", "user info", User{}, true).
 					DocResponseModel("200", "user info", User{}).
 					DocResponseSimple("404", "not found")
