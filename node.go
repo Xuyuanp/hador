@@ -46,6 +46,10 @@ type node struct {
 	paramDesc     string
 }
 
+func (n *node) router() Router {
+	return RouterFunc(n.AddRoute)
+}
+
 func (n *node) AddRoute(method Method, pattern string, handler interface{}, filters ...Filter) *Leaf {
 	if len(pattern) == 0 || pattern[0] != '/' {
 		panic("pattern should start with '/', pattern: " + pattern)

@@ -37,25 +37,14 @@ type Hador struct {
 	ctxPool  sync.Pool
 	respPool sync.Pool
 
-	Document *swagger.Document
+	document *swagger.Document
 }
 
 // New creates new Hador instance
 func New() *Hador {
-	h := &Hador{
-		Logger: defaultLogger,
-		Document: &swagger.Document{
-			Swagger:     "2.0.0",
-			Definitions: swagger.GlobalDefinitions,
-			Tags:        []swagger.Tag{},
-			Responses:   swagger.Responses{},
-			Parameters:  map[string]swagger.Parameter{},
-			Consumes:    []string{},
-			Produces:    []string{},
-		},
-	}
+	h := &Hador{Logger: defaultLogger}
 	h.root = &node{}
-	h.Router = RouterFunc(h.root.AddRoute)
+	h.Router = h.root.router()
 	h.FilterChain = NewFilterChain(h)
 
 	h.ctxPool.New = func() interface{} {
@@ -178,9 +167,9 @@ func (h *Hador) travelPaths() swagger.Paths {
 
 // SwaggerHandler returns swagger json api handler
 func (h *Hador) SwaggerHandler() Handler {
-	h.Document.Paths = h.travelPaths()
+	h.SwaggerDocument().Paths = h.travelPaths()
 	return HandlerFunc(func(ctx *Context) {
-		ctx.RenderJSON(h.Document)
+		ctx.RenderJSON(h.SwaggerDocument())
 	})
 }
 
@@ -202,7 +191,18 @@ func (h *Hador) Swagger(config SwaggerConfig) *Leaf {
 
 // SwaggerDocument returns swagger.Document of this Hador.
 func (h *Hador) SwaggerDocument() *swagger.Document {
-	return h.Document
+	if h.document == nil {
+		h.document = &swagger.Document{
+			Swagger:     "2.0.0",
+			Definitions: swagger.GlobalDefinitions,
+			Tags:        []swagger.Tag{},
+			Responses:   swagger.Responses{},
+			Parameters:  map[string]swagger.Parameter{},
+			Consumes:    []string{},
+			Produces:    []string{},
+		}
+	}
+	return h.document
 }
 
 func (h *Hador) showGraph() {
