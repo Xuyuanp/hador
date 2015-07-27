@@ -22,22 +22,20 @@ import "github.com/Xuyuanp/hador/swagger"
 // Leaf struct
 type Leaf struct {
 	*FilterChain
-	h       *Hador
-	parent  *Node
+	parent  *node
 	path    string
 	handler Handler
 	method  Method
 
 	DocIgnored bool
-	operation  swagger.Operation
+	operation  *swagger.Operation
 }
 
 // NewLeaf creates new Leaf instance
-func NewLeaf(parent *Node, method Method, handler Handler) *Leaf {
+func NewLeaf(parent *node, method Method, handler Handler) *Leaf {
 	l := &Leaf{
-		h:       parent.h,
 		parent:  parent,
-		path:    parent.Path(),
+		path:    parent.path(),
 		method:  method,
 		handler: handler,
 	}
@@ -60,11 +58,6 @@ func (l *Leaf) Handler() Handler {
 	return l.handler
 }
 
-// Parent returns parent node of leaf
-func (l *Leaf) Parent() *Node {
-	return l.parent
-}
-
 // AddFilters add filters into FilterChain
 func (l *Leaf) AddFilters(filters ...Filter) *Leaf {
 	l.FilterChain.AddFilters(filters...)
@@ -79,5 +72,8 @@ func (l *Leaf) DocIgnore(ignored bool) *Leaf {
 
 // SwaggerOperation returns swagger Operation of this route.
 func (l *Leaf) SwaggerOperation() *swagger.Operation {
-	return &l.operation
+	if l.operation == nil {
+		l.operation = &swagger.Operation{}
+	}
+	return l.operation
 }

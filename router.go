@@ -64,7 +64,7 @@ type Router interface {
 	Connect(pattern string, h interface{}, filters ...Filter) *Leaf
 	Patch(pattern string, h interface{}, filters ...Filter) *Leaf
 
-	// Any routes doesn't support swagger API, all DocXXX methods will be ignored.
+	// Any routes doesn't support swagger API, always returns nil.
 	Any(pattern string, h interface{}, filters ...Filter) *Leaf
 
 	// Be carefull! All requests match this pattern would be processed by the provided

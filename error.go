@@ -17,24 +17,16 @@
 
 package hador
 
-import (
-	"testing"
+import "net/http"
 
-	"github.com/smartystreets/goconvey/convey"
-)
+// HTTPError HTTP error type
+type HTTPError int
 
-func TestLeaf(t *testing.T) {
-	convey.Convey("Test Leaf", t, func() {
-		h := New()
-		handler := newSimpleHandler("swagger")
-		leaf := h.Get("/swagger", handler)
-		convey.So(leaf, convey.ShouldNotBeNil)
-		convey.So(leaf.Handler(), convey.ShouldEqual, handler)
-		convey.So(leaf.Method(), convey.ShouldEqual, GET)
-		parent := leaf.parent
-		for parent != nil && parent.parent != nil {
-			parent = parent.parent
-		}
-		convey.So(parent, convey.ShouldEqual, h.root)
-	})
+func (e HTTPError) Error() string {
+	return http.StatusText(int(e))
 }
+
+const (
+	err404 HTTPError = http.StatusNotFound
+	err405 HTTPError = http.StatusMethodNotAllowed
+)

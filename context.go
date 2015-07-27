@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"net/http"
-	"strings"
 )
 
 // Context struct
@@ -34,11 +34,11 @@ type Context struct {
 	data   map[string]interface{}
 	Logger Logger
 
-	currPath string
-
 	errHandlers   map[int]func(...interface{})
 	Err4XXHandler func(int, ...interface{})
 	Err5XXHandler func(int, ...interface{})
+
+	path string
 }
 
 func newContext(logger Logger) *Context {
@@ -50,23 +50,11 @@ func newContext(logger Logger) *Context {
 func (ctx *Context) reset(w ResponseWriter, req *http.Request) {
 	ctx.Request = req
 	ctx.Response = w
-	ctx.params = nil
+	ctx.params = ctx.params[0:0]
 	ctx.data = nil
 	ctx.errHandlers = nil
 	ctx.Err4XXHandler = nil
 	ctx.Err5XXHandler = nil
-
-	ctx.currPath = trimPath(req.URL.Path)
-}
-
-func trimPath(path string) string {
-	if len(path) > 0 && path[0] == '/' {
-		path = path[1:]
-	}
-	if len(path) > 0 && path[len(path)-1] == '/' {
-		path = path[:len(path)-1]
-	}
-	return path
 }
 
 // OnError handles http error by calling handler registered in SetErrorHandler methods.
@@ -93,18 +81,6 @@ func (ctx *Context) OnError(status int, args ...interface{}) {
 		return
 	}
 
-	// use default http error
-	switch status {
-	case http.StatusMethodNotAllowed:
-		// set Allow header for 405
-		if len(args) > 0 {
-			if allows, ok := args[0].([]string); ok && len(allows) > 0 {
-				ctx.SetHeader("Allow",
-					strings.Join(allows, ","))
-				args = args[1:]
-			}
-		}
-	}
 	if !ctx.Response.Written() {
 		text := http.StatusText(status)
 		if len(args) > 0 {
@@ -122,22 +98,10 @@ func (ctx *Context) SetErrorHandler(status int, handler func(...interface{})) {
 	ctx.errHandlers[status] = handler
 }
 
-func (ctx *Context) segment() string {
-	index := strings.Index(ctx.currPath, "/")
-	if index == -1 {
-		segment := ctx.currPath
-		ctx.currPath = ""
-		return segment
-	}
-	segment := ctx.currPath[:index]
-	ctx.currPath = ctx.currPath[index+1:]
-	return segment
-}
-
 // Params returns params lazy-init
 func (ctx *Context) Params() Params {
 	if ctx.params == nil {
-		ctx.params = make(Params)
+		ctx.params = make(Params, 10)[0:0]
 	}
 	return ctx.params
 }
@@ -211,7 +175,7 @@ func (ctx *Context) WriteStatus(p []byte, status ...int) (n int, err error) {
 
 // WriteString writes string into response by calling ctx.Write method.
 func (ctx *Context) WriteString(s string) (n int, err error) {
-	return ctx.Write([]byte(s))
+	return io.WriteString(ctx.Response, s)
 }
 
 // RenderJSON renders v in JSON format and sets status if provided.

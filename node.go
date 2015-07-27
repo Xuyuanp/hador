@@ -1,5 +1,6 @@
 /*
- * Copyright 2015 Xuyuan Pang <xuyuanp # gmail dot com>
+ * Copyright 2015 Xuyuan Pang
+ * Author: Xuyuan Pang
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,356 +20,387 @@ package hador
 import (
 	"container/list"
 	"fmt"
-	"net/http"
 	"regexp"
-	"strings"
-
-	"github.com/Xuyuanp/hador/swagger"
 )
 
-func splitSegments(path string) []string {
-	path = trimPath(path)
-	if len(path) == 0 {
-		return []string{}
-	}
-	return strings.Split(path, "/")
+type nodeType int
+
+const (
+	static nodeType = iota
+	param
+	matchAll
+)
+
+type node struct {
+	parent     *node
+	segment    string
+	indices    string
+	children   []*node
+	paramChild *node
+	ntype      nodeType
+	leaves     map[Method]*Leaf
+
+	paramName     string
+	paramReg      *regexp.Regexp
+	paramDataType string
+	paramDesc     string
 }
 
-func isReg(segment string) bool {
-	if regSegmentRegexp.MatchString(segment) {
-		return true
+func (n *node) AddRoute(method Method, pattern string, handler interface{}, filters ...Filter) *Leaf {
+	if len(pattern) == 0 || pattern[0] != '/' {
+		panic("pattern should start with '/', pattern: " + pattern)
 	}
-	if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
-		return true
+	if len(pattern) > 1 && pattern[len(pattern)-1] == '/' {
+		pattern = pattern[:len(pattern)-1]
 	}
-	return false
+	if handler == nil {
+		panic("handler should NOT be nil")
+	}
+	for _, m := range Methods {
+		if m == method {
+			return n.addRoute(method, pattern, parseHandler(handler), filters...)
+		}
+	}
+	panic("unknown method: " + method)
 }
 
-var regSegmentRegexp = regexp.MustCompile(`\(\?P<.+>.+\)`)
-
-type dispatcher struct {
-	node *Node
+func min(first, second int) int {
+	if first < second {
+		return first
+	}
+	return second
 }
 
-func (d *dispatcher) Serve(ctx *Context) {
-	n := d.node
+func (n *node) addRoute(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	if len(n.segment) == 0 {
+		return n.init(method, pattern, handler, filters...)
+	}
 
-	segment := ctx.segment()
+	if n.ntype == static {
+		// find longest matched prefix
+		max := min(len(n.segment), len(pattern))
+		i := 0
+		for i < max && pattern[i] == n.segment[i] {
+			i++
+		}
+		n.splitAt(i)
+		return n.insertChild(method, pattern[i:], handler, filters...)
+	}
 
-	// path matches
-	if len(segment) == 0 {
-		n.doServe(ctx)
+	if n.ntype == param {
+		i, max := 0, len(pattern)
+		for i < max && pattern[i] != '}' {
+			i++
+		}
+		if i == max {
+			panic("missing '}'")
+		}
+		if n.segment != pattern[:i+1] {
+			panic("conflict param node")
+		}
+		if i < max-1 && pattern[i+1] != '/' {
+			panic("'}' should be before '/'")
+		}
+		return n.insertChild(method, pattern[i+1:], handler, filters...)
+	}
+	return nil
+}
+
+func (n *node) splitAt(index int) {
+	if index >= len(n.segment) {
 		return
 	}
-
-	// find next node
-	next := n.findNext(segment)
-	if next != nil {
-		if next.paramReg != nil {
-			ctx.Params()[next.paramName] = segment
-		}
-		next.Serve(ctx)
-		return
+	next := &node{
+		parent:     n,
+		segment:    n.segment[index:],
+		indices:    n.indices,
+		children:   n.children,
+		leaves:     n.leaves,
+		ntype:      n.ntype,
+		paramChild: n.paramChild,
 	}
-	// 404 not found
-	ctx.OnError(http.StatusNotFound)
-}
-
-// Node struct
-type Node struct {
-	*FilterChain
-	h           *Hador
-	parent      *Node
-	depth       int
-	segment     string
-	paramName   string
-	paramReg    *regexp.Regexp
-	rawChildren map[string]*Node
-	regChildren []*Node
-	leaves      map[Method]*Leaf
-}
-
-// NewNode creates new Node instance.
-func NewNode(h *Hador, segment string, depth int) *Node {
-	paramName, paramReg := resolveSegment(segment)
-	n := &Node{
-		h:           h,
-		segment:     segment,
-		depth:       depth,
-		paramName:   paramName,
-		paramReg:    paramReg,
-		rawChildren: make(map[string]*Node),
-		regChildren: make([]*Node, 0),
-		leaves:      make(map[Method]*Leaf),
+	if next.children != nil {
+		for _, ch := range next.children {
+			ch.parent = next
+		}
 	}
-	n.FilterChain = NewFilterChain(&dispatcher{node: n})
-	return n
-}
-
-func resolveSegment(segment string) (paramName string, paramReg *regexp.Regexp) {
-	var splits []string
-	if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
-		seg := segment[1 : len(segment)-1]
-		splits = strings.SplitN(seg, ":", 2)
-		if len(splits) == 1 {
-			splits = append(splits, ".+")
-		}
-	} else if regSegmentRegexp.MatchString(segment) {
-		seg := segment[4 : len(segment)-1]
-		splits = strings.SplitN(seg, ">", 2)
+	if next.paramChild != nil {
+		next.paramChild.parent = next
 	}
-	if splits != nil && len(splits) == 2 {
-		paramName = splits[0]
-		regstr := splits[1]
-		if !strings.HasPrefix(regstr, "^") {
-			regstr = "^" + regstr
-		}
-		if !strings.HasSuffix(regstr, "$") {
-			regstr = regstr + "$"
-		}
-		paramReg = regexp.MustCompile(regstr)
+	n.indices = n.segment[index : index+1]
+	n.segment = n.segment[:index]
+	n.children = []*node{next}
+	n.paramChild = nil
+	n.leaves = nil
+}
+
+func (n *node) insertChild(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	if len(pattern) == 0 {
+		return n.handle(method, handler, filters...)
 	}
-	return
-}
-
-// Options adds route by call AddRoute
-func (n *Node) Options(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(OPTIONS, pattern, handler, filters...)
-}
-
-// Get adds route by call AddRoute
-func (n *Node) Get(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(GET, pattern, handler, filters...)
-}
-
-// Head adds route by call AddRoute
-func (n *Node) Head(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(HEAD, pattern, handler, filters...)
-}
-
-// Post adds route by call AddRoute
-func (n *Node) Post(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(POST, pattern, handler, filters...)
-}
-
-// Put adds route by call AddRoute
-func (n *Node) Put(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(PUT, pattern, handler, filters...)
-}
-
-// Delete adds route by call AddRoute
-func (n *Node) Delete(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(DELETE, pattern, handler, filters...)
-}
-
-// Trace adds route by call AddRoute
-func (n *Node) Trace(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(TRACE, pattern, handler, filters...)
-}
-
-// Connect adds route by call AddRoute
-func (n *Node) Connect(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(CONNECT, pattern, handler, filters...)
-}
-
-// Patch adds route by call AddRoute
-func (n *Node) Patch(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute(PATCH, pattern, handler, filters...)
-}
-
-// Any adds route by call AddRoute
-func (n *Node) Any(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return n.AddRoute("ANY", pattern, handler, filters...)
-}
-
-// Group adds group routes
-func (n *Node) Group(pattern string, f func(Router), filters ...Filter) {
-	segments := splitSegments(pattern)
-	r, _, _ := n.add(segments, "", nil, filters...)
-	f(r)
-}
-
-// AddController adds Controller as Handler.
-func (n *Node) AddController(pattern string, controller ControllerInterface, filters ...Filter) {
-	controllerFilter := &ControllerFilter{controller: controller}
-	filters = append([]Filter{controllerFilter}, filters...)
-	n.Group(pattern, func(r Router) {
-		for _, method := range Methods {
-			handler := handlerForMethod(controller, method)
-			leaf := Handle(r, method, "/", handler)
-			docMethodForMethod(controller, method)(leaf)
-		}
-	}, filters...)
-}
-
-// AddRoute adds a new route with method, pattern and handler
-func (n *Node) AddRoute(method Method, pattern string, h interface{}, filters ...Filter) *Leaf {
-	handler := parseHandler(h)
-	segments := splitSegments(pattern)
-	if _, l, ok := n.add(segments, method, handler, filters...); ok {
-		return l
+	if pattern[0] == '{' {
+		return n.insertParamChild(method, pattern, handler, filters...)
 	}
-	panic(fmt.Errorf("pattern: %s has been registered", pattern))
+	return n.insertStaticChild(method, pattern, handler, filters...)
 }
 
-func (n *Node) add(segments []string, method Method, handler Handler, filters ...Filter) (*Node, *Leaf, bool) {
-	if len(segments) == 0 {
-		if method != "" && handler != nil {
-			l, ok := n.handle(method, handler, filters...)
-			return n, l, ok
+func (n *node) insertStaticChild(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	for i, ind := range n.indices {
+		if ind == rune(pattern[0]) {
+			return n.children[i].addRoute(method, pattern, handler, filters...)
 		}
-		n.AddFilters(filters...)
-		return n, nil, true
+	}
+	n.indices += pattern[:1]
+	child := &node{parent: n}
+	n.children = append(n.children, child)
+	return child.addRoute(method, pattern, handler, filters...)
+}
+
+func (n *node) insertParamChild(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	if n.paramChild == nil {
+		n.paramChild = &node{parent: n}
+	}
+	return n.paramChild.addRoute(method, pattern, handler, filters...)
+}
+
+func (n *node) init(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	if pattern[0] == '{' {
+		return n.initParam(method, pattern, handler, filters...)
+	}
+	return n.initStatic(method, pattern, handler, filters...)
+}
+
+func (n *node) initStatic(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	i, max := 0, len(pattern)
+	for i < max && pattern[i] != '{' {
+		i++
+	}
+	if i < max && i > 0 && pattern[i-1] != '/' {
+		panic("'{' should be after '/'")
 	}
 
-	segment := segments[0]
-	next := n.findOrCreateNext(segment)
-	return next.add(segments[1:], method, handler, filters...)
+	n.segment = pattern[:i]
+	n.ntype = static
+	n.indices = ""
+	n.children = nil
+	n.leaves = nil
+	return n.insertChild(method, pattern[i:], handler, filters...)
 }
 
-func (n *Node) handle(method Method, handler Handler, filters ...Filter) (l *Leaf, ok bool) {
+func (n *node) initParam(method Method, pattern string, handler Handler, filters ...Filter) *Leaf {
+	name, regstr, dataType, desc, rest := readParam(pattern)
+	if len(name) == 0 {
+		panic("empty param name")
+	}
+	n.paramName = name
+	if len(regstr) > 0 {
+		n.paramReg = regexp.MustCompile(regstr)
+	}
+	n.paramDataType = dataType
+	n.paramDesc = desc
+
+	n.ntype = param
+	n.segment = pattern[:len(pattern)-len(rest)]
+	n.indices = ""
+	n.children = nil
+	n.leaves = nil
+	return n.insertChild(method, rest, handler, filters...)
+}
+
+func (n *node) handle(method Method, handler Handler, filters ...Filter) *Leaf {
 	if _, ok := n.leaves[method]; ok {
-		return nil, false
+		panic("route has been registered")
 	}
-	l = NewLeaf(n, method, handler)
+	l := NewLeaf(n, method, handler)
+	if n.leaves == nil {
+		n.leaves = make(map[Method]*Leaf)
+	}
 	n.leaves[method] = l
 	l.AddFilters(filters...)
-	return l, true
+	return l
 }
 
-func (n *Node) findOrCreateNext(segment string) (next *Node) {
-	if !isReg(segment) {
-		if ne, ok := n.rawChildren[segment]; ok {
-			next = ne
-		} else {
-			next = NewNode(n.h, segment, n.depth+1)
-			n.rawChildren[segment] = next
-		}
-	} else {
-		found := false
-		for _, next = range n.regChildren {
-			if next.segment == segment {
-				found = true
-				break
-			}
-		}
-		if !found {
-			next = NewNode(n.h, segment, n.depth+1)
-			n.regChildren = append(n.regChildren, next)
+func (n *node) findMaxParams() int {
+	base := 0
+	if n.ntype == param {
+		base = 1
+	}
+	max := 0
+	for _, ch := range n.children {
+		if submax := ch.findMaxParams(); submax > max {
+			max = submax
 		}
 	}
-	next.parent = n
-	return
-}
-
-func (n *Node) findNext(segment string) (next *Node) {
-	if ne, ok := n.rawChildren[segment]; ok {
-		next = ne
-	} else {
-		for _, ne := range n.regChildren {
-			if ne.MatchRegexp(segment) {
-				next = ne
-				break
-			}
+	if n.paramChild != nil {
+		if submax := n.paramChild.findMaxParams(); submax > max {
+			max = submax
 		}
 	}
-	return
+	return max + base
 }
 
-func (n *Node) doServe(ctx *Context) {
-	// 404 not found
+func (n *node) match(method Method, path string, params Params) (Params, *Leaf, error) {
+	switch n.ntype {
+	case static:
+		return n.matchStatic(method, path, params)
+	case param:
+		return n.matchParam(method, path, params)
+	}
+	return params, nil, err404
+}
+
+func (n *node) matchLeaf(method Method) (*Leaf, error) {
 	if len(n.leaves) == 0 {
-		ctx.OnError(http.StatusNotFound)
-		return
+		return nil, err404
 	}
 	// method matches
-	if l, ok := n.leaves[Method(ctx.Request.Method)]; ok {
-		l.Serve(ctx)
-		return
+	if l, ok := n.leaves[method]; ok {
+		return l, nil
 	}
-	// ANY matches
-	if l, ok := n.leaves["ANY"]; ok {
-		l.Serve(ctx)
-		return
+	return nil, err405
+}
+
+func (n *node) matchStatic(method Method, path string, params Params) (Params, *Leaf, error) {
+	if len(path) < len(n.segment) {
+		return params, nil, err404
 	}
-	// 405 method not allowed
-	methods := make([]Method, len(n.leaves))
-	i := 0
-	for m := range n.leaves {
-		methods[i] = m
+	i, seglen := 0, len(n.segment)
+	for i < seglen && n.segment[i] == path[i] {
 		i++
 	}
-	ctx.OnError(http.StatusMethodNotAllowed, methods)
-}
-
-// MatchRegexp checks if the segment match regexp in node
-func (n *Node) MatchRegexp(segment string) bool {
-	if n.paramReg != nil && n.paramReg.MatchString(segment) {
-		return true
+	if i < seglen {
+		return params, nil, err404
 	}
-	return false
-}
-
-// Setter returns a setter-chain to add a new route.
-func (n *Node) Setter() MethodSetter {
-	return func(method Method) PathSetter {
-		return func(path string) HandlerSetter {
-			return func(handler interface{}, filters ...Filter) *swagger.Operation {
-				return n.AddRoute(method, path, handler, filters...).SwaggerOperation()
-			}
+	if i == len(path) {
+		l, err := n.matchLeaf(method)
+		return params, l, err
+	}
+	c := path[seglen]
+	for index, ind := range n.indices {
+		if ind == rune(c) {
+			return n.children[index].match(method, path[seglen:], params)
 		}
 	}
-}
-
-// Path returns the full path from root to the node
-func (n *Node) Path() string {
-	if n.parent == nil {
-		return "/"
+	if n.paramChild != nil {
+		return n.paramChild.match(method, path[seglen:], params)
 	}
-	ppath := n.parent.Path()
-	if ppath == "/" {
-		ppath = ""
-	}
-	if n.paramName != "" {
-		return ppath + "/{" + n.paramName + "}"
-	}
-	return ppath + "/" + n.segment
+	return params, nil, err404
 }
 
-// Parent returns the node's parent node
-func (n *Node) Parent() *Node {
-	return n.parent
-}
-
-// Depth returns the nodes' depth
-func (n *Node) Depth() int {
-	return n.depth
-}
-
-// Segment returns node's segment
-func (n *Node) Segment() string {
-	return n.segment
-}
-
-// Leaves returns all of node's leaves
-func (n *Node) Leaves() []*Leaf {
-	leaves := make([]*Leaf, len(n.leaves))
-	i := 0
-	for _, l := range n.leaves {
-		leaves[i] = l
+func (n *node) matchParam(method Method, path string, params Params) (Params, *Leaf, error) {
+	i, max := 0, len(path)
+	for i < max && path[i] != '/' {
 		i++
 	}
-	return leaves[:i]
+
+	if n.paramReg != nil && !n.paramReg.MatchString(path[:i]) {
+		return params, nil, err404
+	}
+
+	params = params[:len(params)+1]
+	params[len(params)-1].Key = n.paramName
+	params[len(params)-1].Value = path[:i]
+
+	if i == max {
+		l, err := n.matchLeaf(method)
+		return params, l, err
+	}
+	c := path[i]
+	for index, ind := range n.indices {
+		if ind == rune(c) {
+			return n.children[index].match(method, path[i:], params)
+		}
+	}
+	if n.paramChild != nil {
+		return n.paramChild.match(method, path[:i], params)
+	}
+	return params, nil, err404
 }
 
-func (n *Node) travel(llist *list.List) {
+func (n *node) travel(llist *list.List) {
 	for _, l := range n.leaves {
 		llist.PushBack(l)
 	}
-	for _, child := range n.rawChildren {
+
+	for _, child := range n.children {
 		child.travel(llist)
 	}
-	for _, child := range n.regChildren {
-		child.travel(llist)
+	if n.paramChild != nil {
+		n.paramChild.travel(llist)
 	}
+}
+
+func (n *node) path() string {
+	var path string
+	if n.ntype == static {
+		path = n.segment
+	} else if n.ntype == param {
+		path = "{" + n.paramName + "}"
+	}
+	if n.parent != nil {
+		return n.parent.path() + path
+	}
+	return path
+}
+
+func (n *node) _travel(path string) {
+	path += n.segment
+	for m, l := range n.leaves {
+		if path != l.path {
+			fmt.Printf("%s %s ===== %s\n", m, path, l.Path())
+		}
+	}
+	for _, child := range n.children {
+		child._travel(path)
+	}
+	if n.paramChild != nil {
+		n.paramChild._travel(path)
+	}
+}
+
+func readParam(pattern string) (name, regstr, dataType, desc, rest string) {
+	dataType = "string"
+	field, rest, end := readField(pattern[1:])
+	name = field
+	if end || len(rest) == 0 {
+		return
+	}
+
+	field, rest, end = readField(rest)
+	regstr = field
+	if end || len(rest) == 0 {
+		return
+	}
+
+	field, rest, end = readField(rest)
+	if len(field) > 0 {
+		dataType = field
+	}
+	if end || len(rest) == 0 {
+		return
+	}
+
+	field, rest, end = readField(rest)
+	desc = field
+	if !end {
+		panic("missing '}'")
+	}
+
+	return
+}
+
+func readField(pattern string) (field, rest string, end bool) {
+	i, max := 0, len(pattern)
+	for i < max {
+		if pattern[i] == ':' {
+			return pattern[:i], pattern[i+1:], false
+		} else if pattern[i] == '}' {
+			if i < max-1 && pattern[i+1] != '/' {
+				panic("'}' should be before '/' or at the end")
+			}
+			return pattern[:i], pattern[i+1:], true
+		}
+		i++
+	}
+	panic("'}' should be before '/' or at the end")
 }

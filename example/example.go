@@ -21,7 +21,6 @@ import (
 	"net/http"
 
 	"github.com/Xuyuanp/hador"
-	"github.com/Xuyuanp/hador/swagger"
 	"github.com/hador-contrib/cors"
 )
 
@@ -108,7 +107,7 @@ func main() {
 		DocInfo("User Manager", "user CRUD", "v1", "http://your.term.of.service.addr").
 		DocHost("127.0.0.1:9090")
 
-	h.Swagger(swagger.Config{
+	h.Swagger(hador.SwaggerConfig{
 		// your swagger-ui file path
 		UIFilePath: "/path/to/your/swagger-ui/dist",
 

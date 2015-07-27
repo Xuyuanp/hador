@@ -15,19 +15,33 @@
  * limitations under the License.
  */
 
-package swagger
+package hador
 
-// Config struct
-type Config struct {
-	// UIFilePath is the location of folder containing swagger-ui index.html file. e.g. swagger-ui/dist
-	UIFilePath string
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-	// UIPrefx is the path where swagger-ui whill be served. e.g. /apidocs
-	UIPrefix string
+	"github.com/smartystreets/goconvey/convey"
+)
 
-	// APIPath is the path where JSON API is available. e.g. /apidocs.json
-	APIPath string
+func TestSetter(t *testing.T) {
+	convey.Convey("Test Setter", t, func() {
+		h := New()
+		h.Setter().
+			Method(GET).
+			Pattern("/hello/{name}").
+			Handler(
+			func(ctx *Context) {
+				name, _ := ctx.Params().GetString("name")
+				ctx.WriteString(name)
+			})
 
-	// SelfDocEnabled enable the swagger-ui path API in doc. False on default.
-	SelfDocEnabled bool
+		req, _ := http.NewRequest("GET", "/hello/jack", nil)
+		resp := httptest.NewRecorder()
+		h.ServeHTTP(resp, req)
+
+		convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
+		convey.So(resp.Body.String(), convey.ShouldEqual, "jack")
+	})
 }

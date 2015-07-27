@@ -17,24 +17,17 @@
 
 package hador
 
-import (
-	"testing"
+// SwaggerConfig struct, mirror of swagger.Config
+type SwaggerConfig struct {
+	// UIFilePath is the location of folder containing swagger-ui index.html file. e.g. swagger-ui/dist
+	UIFilePath string
 
-	"github.com/smartystreets/goconvey/convey"
-)
+	// UIPrefx is the path where swagger-ui whill be served. e.g. /apidocs
+	UIPrefix string
 
-func TestLeaf(t *testing.T) {
-	convey.Convey("Test Leaf", t, func() {
-		h := New()
-		handler := newSimpleHandler("swagger")
-		leaf := h.Get("/swagger", handler)
-		convey.So(leaf, convey.ShouldNotBeNil)
-		convey.So(leaf.Handler(), convey.ShouldEqual, handler)
-		convey.So(leaf.Method(), convey.ShouldEqual, GET)
-		parent := leaf.parent
-		for parent != nil && parent.parent != nil {
-			parent = parent.parent
-		}
-		convey.So(parent, convey.ShouldEqual, h.root)
-	})
+	// APIPath is the path where JSON API is available. e.g. /apidocs.json
+	APIPath string
+
+	// SelfDocEnabled enable the swagger-ui path API in doc. False on default.
+	SelfDocEnabled bool
 }

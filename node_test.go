@@ -1,296 +1,243 @@
-/*
- * Copyright 2014 Xuyuan Pang <xuyuanp # gmail dot com>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package hador
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestNode(t *testing.T) {
-	convey.Convey("Test tree", t, func() {
-		convey.Convey("Test All method", func() {
-			n := NewNode(nil, "", 0)
-			n.Options("/a/b", newSimpleHandler("OPTIONS"))
-			n.Get("/a/b", newSimpleHandler("GET"))
-			n.Head("/a/b", newSimpleHandler("HEAD"))
-			n.Post("/a/b", newSimpleHandler("POST"))
-			n.Put("/a/b", newSimpleHandler("PUT"))
-			n.Delete("/a/b", newSimpleHandler("DELETE"))
-			n.Trace("/a/b", newSimpleHandler("TRACE"))
-			n.Connect("/a/b", newSimpleHandler("CONNECT"))
-			n.Patch("/a/b", newSimpleHandler("PATCH"))
-			n.Any("/a/c", newSimpleHandler("ANY"))
-			convey.Convey("Test OPTIONS", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("OPTIONS", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "OPTIONS")
-			})
-			convey.Convey("Test Get", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "GET")
-			})
-			convey.Convey("Test HEAD", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("HEAD", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "HEAD")
-			})
-			convey.Convey("Test POST", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("POST", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "POST")
-			})
-			convey.Convey("Test PUT", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("PUT", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "PUT")
-			})
-			convey.Convey("Test DELETE", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("DELETE", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "DELETE")
-			})
-			convey.Convey("Test TRACE", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("TRACE", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "TRACE")
-			})
-			convey.Convey("Test CONNECT", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("CONNECT", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "CONNECT")
-			})
-			convey.Convey("Test PATCH", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("PATCH", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "PATCH")
-			})
-			convey.Convey("Test ANY", func() {
-				convey.Convey("GET", func() {
-					resp := httptest.NewRecorder()
-					req, _ := http.NewRequest("GET", "/a/c", nil)
-					ctx := newContext(defaultLogger)
-					ctx.reset(NewResponseWriter(resp), req)
-					n.Serve(ctx)
-					convey.So(resp.Body.String(), convey.ShouldEqual, "ANY")
+	convey.Convey("Test node", t, func() {
+		convey.Convey("Test AddRoute", func() {
+			convey.Convey("Test static", func() {
+				convey.Convey("single route", func() {
+					n := &node{}
+					n.AddRoute(GET, "/init", func(*Context) {})
+					convey.So(n.segment, convey.ShouldEqual, "/init")
+					convey.So(n.ntype, convey.ShouldEqual, static)
 				})
-				convey.Convey("POST", func() {
-					resp := httptest.NewRecorder()
-					req, _ := http.NewRequest("POST", "/a/c", nil)
-					ctx := newContext(defaultLogger)
-					ctx.reset(NewResponseWriter(resp), req)
-					n.Serve(ctx)
-					convey.So(resp.Body.String(), convey.ShouldEqual, "ANY")
+				convey.Convey("two routes", func() {
+					n := &node{}
+					n.AddRoute(GET, "/initfoo", func(*Context) {})
+					n.AddRoute(GET, "/initbar", func(*Context) {})
+					convey.So(n.segment, convey.ShouldEqual, "/init")
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.indices, convey.ShouldEqual, "fb")
+					convey.So(len(n.children), convey.ShouldEqual, 2)
+					convey.So(n.children[0].segment, convey.ShouldEqual, "foo")
+					convey.So(n.children[1].segment, convey.ShouldEqual, "bar")
+				})
+				convey.Convey("two routes, longer first", func() {
+					n := &node{}
+					n.AddRoute(GET, "/initfoo", func(*Context) {})
+					n.AddRoute(GET, "/init", func(*Context) {})
+					convey.So(n.segment, convey.ShouldEqual, "/init")
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.indices, convey.ShouldEqual, "f")
+					convey.So(len(n.children), convey.ShouldEqual, 1)
+					convey.So(n.children[0].segment, convey.ShouldEqual, "foo")
+				})
+				convey.Convey("two routes, shorter first", func() {
+					n := &node{}
+					n.AddRoute(GET, "/init", func(*Context) {})
+					n.AddRoute(GET, "/initfoo", func(*Context) {})
+					convey.So(n.segment, convey.ShouldEqual, "/init")
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.indices, convey.ShouldEqual, "f")
+					convey.So(len(n.children), convey.ShouldEqual, 1)
+					convey.So(n.children[0].segment, convey.ShouldEqual, "foo")
+				})
+				convey.Convey("two routes,  only the same slash", func() {
+					n := &node{}
+					n.AddRoute(GET, "/foo", func(*Context) {})
+					n.AddRoute(GET, "/bar", func(*Context) {})
+					convey.So(n.segment, convey.ShouldEqual, "/")
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.indices, convey.ShouldEqual, "fb")
+					convey.So(len(n.children), convey.ShouldEqual, 2)
+					convey.So(n.children[0].segment, convey.ShouldEqual, "foo")
+					convey.So(n.children[1].segment, convey.ShouldEqual, "bar")
 				})
 			})
-			convey.Convey("Test Group", func() {
-				n := NewNode(nil, "", 0)
-				n.Group("/a", func(r Router) {
-					r.Get("/b", newSimpleHandler("GET"))
-					r.Post("/c", newSimpleHandler("POST"))
+			convey.Convey("Test param", func() {
+				convey.Convey("param at root", func() {
+					n := &node{}
+					n.AddRoute(GET, "/{name}", func(*Context) {})
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.segment, convey.ShouldEqual, "/")
+					convey.So(n.paramChild, convey.ShouldNotBeNil)
+					convey.So(n.paramChild.ntype, convey.ShouldEqual, param)
+					convey.So(n.paramChild.segment, convey.ShouldEqual, "{name}")
 				})
-				convey.Convey("/a/b", func() {
-					resp := httptest.NewRecorder()
-					req, _ := http.NewRequest("GET", "/a/b", nil)
-					ctx := newContext(defaultLogger)
-					ctx.reset(NewResponseWriter(resp), req)
-					n.Serve(ctx)
-					convey.So(resp.Body.String(), convey.ShouldEqual, "GET")
+				convey.Convey("param not at root", func() {
+					n := &node{}
+					n.AddRoute(GET, "/foo/{name}", func(*Context) {})
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.segment, convey.ShouldEqual, "/foo/")
+					convey.So(n.paramChild, convey.ShouldNotBeNil)
+					convey.So(n.paramChild.ntype, convey.ShouldEqual, param)
+					convey.So(n.paramChild.segment, convey.ShouldEqual, "{name}")
 				})
-				convey.Convey("/a/c", func() {
-					resp := httptest.NewRecorder()
-					req, _ := http.NewRequest("POST", "/a/c", nil)
-					ctx := newContext(defaultLogger)
-					ctx.reset(NewResponseWriter(resp), req)
-					n.Serve(ctx)
-					convey.So(resp.Body.String(), convey.ShouldEqual, "POST")
+				convey.Convey("param between statics", func() {
+					n := &node{}
+					n.AddRoute(GET, "/foo/{name}/bar", func(*Context) {})
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.segment, convey.ShouldEqual, "/foo/")
+					convey.So(n.paramChild, convey.ShouldNotBeNil)
+					convey.So(n.paramChild.ntype, convey.ShouldEqual, param)
+					convey.So(n.paramChild.segment, convey.ShouldEqual, "{name}")
+					convey.So(n.paramChild.indices, convey.ShouldEqual, "/")
+					convey.So(len(n.paramChild.children), convey.ShouldEqual, 1)
+					convey.So(n.paramChild.children[0].ntype, convey.ShouldEqual, static)
+					convey.So(n.paramChild.children[0].segment, convey.ShouldEqual, "/bar")
+				})
+				convey.Convey("multi param nodes", func() {
+					n := &node{}
+					n.AddRoute(GET, "/foo/{name}/bar", func(*Context) {})
+					n.AddRoute(GET, "/foo/{name}/fizz", func(*Context) {})
+					convey.So(n.ntype, convey.ShouldEqual, static)
+					convey.So(n.segment, convey.ShouldEqual, "/foo/")
+					convey.So(n.paramChild, convey.ShouldNotBeNil)
+					convey.So(n.paramChild.ntype, convey.ShouldEqual, param)
+					convey.So(n.paramChild.segment, convey.ShouldEqual, "{name}")
+					convey.So(n.paramChild.indices, convey.ShouldEqual, "/")
+					convey.So(len(n.paramChild.children), convey.ShouldEqual, 1)
+					convey.So(n.paramChild.children[0].ntype, convey.ShouldEqual, static)
+					convey.So(n.paramChild.children[0].segment, convey.ShouldEqual, "/")
+					convey.So(n.paramChild.children[0].indices, convey.ShouldEqual, "bf")
+					convey.So(n.paramChild.children[0].children[0].segment, convey.ShouldEqual, "bar")
+					convey.So(n.paramChild.children[0].children[1].segment, convey.ShouldEqual, "fizz")
+				})
+				convey.Convey("Test fuck", func() {
+					convey.Convey("test users", func() {
+						n := &node{}
+						n.AddRoute(GET, "/hello/{name}", func(*Context) {})
+						n.AddRoute(POST, "/hello/{name}", func(*Context) {})
+						n.AddRoute(GET, "/hello/{name}/today", func(*Context) {})
+						n.AddRoute(POST, "/hello/{name}/today", func(*Context) {})
+						convey.So(n.ntype, convey.ShouldEqual, static)
+						convey.So(n.segment, convey.ShouldEqual, "/hello/")
+						convey.So(n.paramChild, convey.ShouldNotBeNil)
+						child := n.paramChild
+						convey.So(child.ntype, convey.ShouldEqual, param)
+						convey.So(child.segment, convey.ShouldEqual, "{name}")
+						convey.So(child.ntype, convey.ShouldEqual, param)
+						convey.So(len(child.leaves), convey.ShouldEqual, 2)
+						convey.So(child.indices, convey.ShouldEqual, "/")
+						convey.So(len(child.children), convey.ShouldEqual, 1)
+						child = child.children[0]
+						convey.So(child.ntype, convey.ShouldEqual, static)
+						convey.So(child.segment, convey.ShouldEqual, "/today")
+						convey.So(child.leaves, convey.ShouldNotBeNil)
+					})
 				})
 			})
-			convey.Convey("Register multi handlers with same method and same path would case panic", func() {
-				defer func() {
-					convey.So(recover(), convey.ShouldNotBeNil)
-				}()
-				n := NewNode(nil, "", 0)
-				n.Get("/test", newSimpleHandler("h1"))
-				n.Get("/test", newSimpleHandler("h2"))
+		})
+
+		convey.Convey("Test match", func() {
+			convey.Convey("single", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/bar", func(_ *Context) {})
+				_, lr, err := n.match(GET, "/bar", nil)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(lr, convey.ShouldEqual, l)
+			})
+			convey.Convey("static", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/foo/bar", func(_ *Context) {})
+				_, lr, err := n.match(GET, "/foo/bar", nil)
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(lr, convey.ShouldEqual, l)
+			})
+			convey.Convey("param", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/hello/{name}", func(_ *Context) {})
+				maxParams := n.findMaxParams()
+				convey.So(maxParams, convey.ShouldEqual, 1)
+				params := make(Params, maxParams)
+				_, lr, err := n.match(GET, "/hello/jack", params[0:0])
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(lr, convey.ShouldEqual, l)
+			})
+			convey.Convey("param with regexp", func() {
+				n := &node{}
+				l := n.AddRoute(GET, "/hello/{name:\\d+}", func(_ *Context) {})
+				maxParams := n.findMaxParams()
+				convey.So(maxParams, convey.ShouldEqual, 1)
+				params := make(Params, maxParams)
+				_, lr, err := n.match(GET, "/hello/jack", params[0:0])
+				convey.So(err, convey.ShouldEqual, err404)
+
+				_, lr, err = n.match(GET, "/hello/123", params[0:0])
+				convey.So(err, convey.ShouldBeNil)
+				convey.So(lr, convey.ShouldEqual, l)
 			})
 		})
-		convey.Convey("Test regexp path", func() {
-			n := NewNode(nil, "", 0)
-			n.Get(`/{name}`, newSimpleHandler("h1"))
-			n.Get(`/{name}/(?P<age>[1-9]\d*)`, newSimpleHandler("h2"))
-			convey.Convey("/jack", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/jack", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "h1")
+
+		convey.Convey("Test findMaxParams", func() {
+			n := &node{}
+			n.AddRoute(GET, "/foo/bar", func(_ *Context) {})
+			n.AddRoute(GET, "/foo/{b}", func(_ *Context) {})
+			n.AddRoute(GET, "/hello/{a}/{b}", func(_ *Context) {})
+			n.AddRoute(GET, "/{a}/{b}/{c}", func(_ *Context) {})
+			convey.So(n.findMaxParams(), convey.ShouldEqual, 3)
+		})
+
+		convey.Convey("Test readField", func() {
+			convey.Convey("Test end", func() {
+				str := `{age:\d+:integer:your age}`
+				field, rest, end := readField(str[1:])
+				convey.So(field, convey.ShouldEqual, "age")
+				convey.So(rest, convey.ShouldEqual, `\d+:integer:your age}`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `\d+`)
+				convey.So(rest, convey.ShouldEqual, `integer:your age}`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `integer`)
+				convey.So(rest, convey.ShouldEqual, `your age}`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `your age`)
+				convey.So(rest, convey.ShouldEqual, ``)
+				convey.So(end, convey.ShouldBeTrue)
 			})
-			convey.Convey("/jack/12", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/jack/12", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "h2")
-			})
-			convey.Convey("/jack/hi", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/jack/hi", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
+			convey.Convey("Test not end", func() {
+				str := `{age:\d+:integer:your age}/hello`
+				field, rest, end := readField(str[1:])
+				convey.So(field, convey.ShouldEqual, "age")
+				convey.So(rest, convey.ShouldEqual, `\d+:integer:your age}/hello`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `\d+`)
+				convey.So(rest, convey.ShouldEqual, `integer:your age}/hello`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `integer`)
+				convey.So(rest, convey.ShouldEqual, `your age}/hello`)
+				convey.So(end, convey.ShouldBeFalse)
+
+				field, rest, end = readField(rest)
+				convey.So(field, convey.ShouldEqual, `your age`)
+				convey.So(rest, convey.ShouldEqual, `/hello`)
+				convey.So(end, convey.ShouldBeTrue)
 			})
 		})
-		convey.Convey("Test Filter", func() {
-			n := NewNode(nil, "", 0)
-			n.Get("/a", newSimpleHandler("h1"))
-			n.Get("/a/b", newSimpleHandler("h2"), FilterFunc(func(ctx *Context, next Handler) {
-				ctx.Response.Write([]byte("Filter"))
-			}))
-			convey.Convey("test /a", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "h1")
-			})
-			convey.Convey("test /a/b", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "Filter")
-			})
-		})
-		convey.Convey("Test FilteFilter with Group", func() {
-			n := NewNode(nil, "", 0)
-			n.Group("/a", func(r Router) {
-				r.Get("/b", newSimpleHandler("h1"))
-				r.Get("/c", newSimpleHandler("h2"))
-			}, FilterFunc(func(ctx *Context, next Handler) {
-				ctx.Response.Write([]byte("Filter"))
-			}))
-			convey.Convey("test /a/b", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "Filter")
-			})
-			convey.Convey("test /a/c", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a/c", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "Filter")
-			})
-		})
-		convey.Convey("Test error", func() {
-			n := NewNode(nil, "", 0)
-			n.Get("/a/b", newSimpleHandler("GET"))
-			convey.Convey("test GET /a/b", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Body.String(), convey.ShouldEqual, "GET")
-			})
-			convey.Convey("test POST /a/b", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("POST", "/a/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Code, convey.ShouldEqual, http.StatusMethodNotAllowed)
-			})
-			convey.Convey("test GET /b", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/b", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
-			})
-			convey.Convey("test GET /a", func() {
-				resp := httptest.NewRecorder()
-				req, _ := http.NewRequest("GET", "/a", nil)
-				ctx := newContext(defaultLogger)
-				ctx.reset(NewResponseWriter(resp), req)
-				n.Serve(ctx)
-				convey.So(resp.Code, convey.ShouldEqual, http.StatusNotFound)
-			})
-		})
-		convey.Convey("Test Path", func() {
-			n := NewNode(nil, "", 0)
-			l := n.Get("/", newSimpleHandler("GET"))
-			l1 := n.Get("/a/b/c/d", newSimpleHandler("GET"))
-			l2 := n.Get("/a/(?P<name>.+)", newSimpleHandler("GET"))
-			convey.So(l.Path(), convey.ShouldEqual, "/")
-			convey.So(l1.Path(), convey.ShouldEqual, "/a/b/c/d")
-			convey.So(l2.Path(), convey.ShouldEqual, "/a/{name}")
-		})
-		convey.Convey("Test root", func() {
-			n := NewNode(nil, "", 0)
-			n.Get("/", newSimpleHandler("GET"))
-			resp := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/", nil)
-			ctx := newContext(defaultLogger)
-			ctx.reset(NewResponseWriter(resp), req)
-			n.Serve(ctx)
-			convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
+
+		convey.Convey("Test readParam", func() {
+			str := `{age:\d+:integer:your age}/hello`
+			name, regstr, dataType, desc, rest := readParam(str)
+			convey.So(name, convey.ShouldEqual, "age")
+			convey.So(regstr, convey.ShouldEqual, `\d+`)
+			convey.So(dataType, convey.ShouldEqual, "integer")
+			convey.So(desc, convey.ShouldEqual, "your age")
+			convey.So(rest, convey.ShouldEqual, "/hello")
 		})
 	})
 }

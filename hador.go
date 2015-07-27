@@ -19,6 +19,7 @@ package hador
 
 import (
 	"container/list"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -31,7 +32,7 @@ type Hador struct {
 	Router
 	*FilterChain
 	Logger Logger
-	root   *Node
+	root   *node
 
 	ctxPool  sync.Pool
 	respPool sync.Pool
@@ -53,12 +54,14 @@ func New() *Hador {
 			Produces:    []string{},
 		},
 	}
-	h.root = NewNode(h, "", 0)
-	h.Router = h.root
-	h.FilterChain = NewFilterChain(h.root)
+	h.root = &node{}
+	h.Router = RouterFunc(h.root.AddRoute)
+	h.FilterChain = NewFilterChain(h)
 
 	h.ctxPool.New = func() interface{} {
-		return newContext(h.Logger)
+		ctx := newContext(h.Logger)
+		ctx.params = make(Params, h.root.findMaxParams())
+		return ctx
 	}
 	h.respPool.New = func() interface{} {
 		return NewResponseWriter(nil)
@@ -70,8 +73,10 @@ func New() *Hador {
 // Default creates Hador instance with default filters(LogFilter, RecoveryFilter)
 func Default() *Hador {
 	h := New()
-	h.Before(NewLogFilter(h.Logger))
-	h.Before(NewRecoveryFilter(h.Logger))
+	h.AddFilters(
+		NewLogFilter(h.Logger),
+		NewRecoveryFilter(h.Logger),
+	)
 	return h
 }
 
@@ -90,19 +95,36 @@ func (h *Hador) RunTLS(addr, sertFile, keyFile string) error {
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	resp := h.respPool.Get().(*responseWriter)
 	resp.reset(w)
-	defer h.respPool.Put(resp)
 
 	ctx := h.ctxPool.Get().(*Context)
 	ctx.reset(resp, req)
-	defer h.ctxPool.Put(ctx)
 
-	h.Serve(ctx)
+	h.FilterChain.Serve(ctx)
+
+	h.ctxPool.Put(ctx)
+	h.respPool.Put(resp)
 }
 
 // Serve implements Handler interface
 func (h *Hador) Serve(ctx *Context) {
-	ctx.SetHeader("Server", "Hador/"+Version)
-	h.FilterChain.Serve(ctx)
+	method := Method(ctx.Request.Method)
+	path := ctx.Request.URL.Path
+	if len(path) > 1 && path[len(path)-1] == '/' {
+		path = path[:len(path)-1]
+	}
+	params, leaf, err := h.root.match(method, path, ctx.Params())
+	if err != nil {
+		status := http.StatusNotFound
+		if e, ok := err.(HTTPError); ok {
+			status = int(e)
+		} else {
+			h.Logger.Error("unexpected error: %s", err)
+		}
+		ctx.OnError(status)
+		return
+	}
+	ctx.params = params
+	leaf.Serve(ctx)
 }
 
 // AddFilters reuses FilterChain's AddFilters method and returns self
@@ -131,6 +153,17 @@ func (h *Hador) travelPaths() swagger.Paths {
 		if leaf.DocIgnored || leaf.method == "ANY" {
 			continue
 		}
+		parent := leaf.parent
+		for parent != nil {
+			if parent.ntype == param {
+				leaf.SwaggerOperation().DocParameterPath(
+					parent.paramName,
+					parent.paramDataType,
+					parent.paramDesc,
+					true)
+			}
+			parent = parent.parent
+		}
 
 		spath, ok := spaths[leaf.Path()]
 		if !ok {
@@ -138,30 +171,30 @@ func (h *Hador) travelPaths() swagger.Paths {
 			spaths[leaf.Path()] = spath
 		}
 
-		spath[strings.ToLower(leaf.Method().String())] = leaf.operation
+		spath[strings.ToLower(leaf.Method().String())] = *leaf.SwaggerOperation()
 	}
 	return spaths
 }
 
 // SwaggerHandler returns swagger json api handler
 func (h *Hador) SwaggerHandler() Handler {
+	h.Document.Paths = h.travelPaths()
 	return HandlerFunc(func(ctx *Context) {
-		h.Document.Paths = h.travelPaths()
-		ctx.SetHeader("Content-Type", "application/json; charset-utf8")
 		ctx.RenderJSON(h.Document)
 	})
 }
 
 // Swagger setups swagger config, returns json API path Leaf
-func (h *Hador) Swagger(config swagger.Config) *Leaf {
+func (h *Hador) Swagger(config SwaggerConfig) *Leaf {
 	// handle API path
-	leaf := h.Get(config.APIPath, h.SwaggerHandler()).DocIgnore(!config.SelfDocEnabled)
+	leaf := h.Get(config.APIPath, h.SwaggerHandler()).
+		DocIgnore(!config.SelfDocEnabled)
 
 	// serve swagger-ui file
 	if config.UIFilePath != "" {
 		s := NewStatic(http.Dir(config.UIFilePath))
 		s.Prefix = config.UIPrefix
-		h.Before(s)
+		h.AddFilters(s)
 	}
 
 	return leaf
@@ -170,4 +203,15 @@ func (h *Hador) Swagger(config swagger.Config) *Leaf {
 // SwaggerDocument returns swagger.Document of this Hador.
 func (h *Hador) SwaggerDocument() *swagger.Document {
 	return h.Document
+}
+
+func (h *Hador) showGraph() {
+	leaves := h.travel()
+	for _, l := range leaves {
+		fmt.Println(l.Path())
+	}
+}
+
+func (h *Hador) _showGraph() {
+	h.root._travel("")
 }

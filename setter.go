@@ -1,27 +1,25 @@
 package hador
 
-import "github.com/Xuyuanp/hador/swagger"
-
 // HandlerSetter easy way to set Handler for a route.
-type HandlerSetter func(handler interface{}, filters ...Filter) *swagger.Operation
+type HandlerSetter func(handler interface{}, filters ...Filter) *Leaf
 
 // Handler calls HandlerSetter function.
-func (hs HandlerSetter) Handler(handler interface{}, filters ...Filter) *swagger.Operation {
+func (hs HandlerSetter) Handler(handler interface{}, filters ...Filter) *Leaf {
 	return hs(handler)
 }
 
-// PathSetter easy way to set Path for a route.
-type PathSetter func(path string) HandlerSetter
+// PatternSetter easy way to set Path for a route.
+type PatternSetter func(pattern string) HandlerSetter
 
-// Path calls PathSetter function.
-func (ps PathSetter) Path(path string) HandlerSetter {
-	return ps(path)
+// Pattern calls Pattern function.
+func (ps PatternSetter) Pattern(pattern string) HandlerSetter {
+	return ps(pattern)
 }
 
 // MethodSetter easy way to set Method for a route.
-type MethodSetter func(method Method) PathSetter
+type MethodSetter func(method Method) PatternSetter
 
 // Method calls MethodSetter function.
-func (ms MethodSetter) Method(method Method) PathSetter {
+func (ms MethodSetter) Method(method Method) PatternSetter {
 	return ms(method)
 }
