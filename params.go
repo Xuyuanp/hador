@@ -34,10 +34,6 @@ type Param struct {
 // type Params map[string]string
 type Params []Param
 
-func (params Params) set(key, val string) {
-	// params[key] = val
-}
-
 func (params Params) get(key string) (string, bool) {
 	for _, entry := range params {
 		if entry.Key == key {
