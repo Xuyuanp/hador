@@ -24,6 +24,7 @@ package hador
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 )
@@ -36,6 +37,9 @@ type ResponseWriter interface {
 	http.Flusher
 	// Status returns the status code of the response or 0 if the response has not been written.
 	Status() int
+
+	WriteString(string) (int, error)
+
 	// Written returns whether or not the ResponseWriter has been written.
 	Written() bool
 	// Size returns the size of the response body.
@@ -78,6 +82,16 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 		rw.WriteHeader(http.StatusOK)
 	}
 	size, err := rw.ResponseWriter.Write(b)
+	rw.size += size
+	return size, err
+}
+
+func (rw *responseWriter) WriteString(s string) (int, error) {
+	if !rw.Written() {
+		// The status will be StatusOK if WriteHeader has not been called yet
+		rw.WriteHeader(http.StatusOK)
+	}
+	size, err := io.WriteString(rw.ResponseWriter, s)
 	rw.size += size
 	return size, err
 }
