@@ -21,27 +21,35 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestSetter(t *testing.T) {
-	convey.Convey("Test Setter", t, func() {
-		h := New()
-		h.Setter().
-			Method(GET).
-			Pattern("/hello/{name}").
-			Handler(
-			func(ctx *Context) {
-				name, _ := ctx.Params().GetString("name")
-				ctx.WriteString(name)
-			})
+	cases := []struct {
+		method  Method
+		pattern string
+		handler interface{}
 
-		req, _ := http.NewRequest("GET", "/hello/jack", nil)
+		path string
+		code int
+		body string
+	}{
+		{GET, "/hello", emptyHandler, "/hello", 200, ""},
+		{GET, "/hello/{name}", newParamHandler("name", ""), "/hello/jack", 200, "jack"},
+	}
+
+	h := New()
+
+	for _, c := range cases {
+		h.Setter().Method(c.method).Pattern(c.pattern).Handler(c.handler)
+	}
+
+	for _, c := range cases {
+		req, _ := http.NewRequest(c.method.String(), c.path, nil)
 		resp := httptest.NewRecorder()
 		h.ServeHTTP(resp, req)
 
-		convey.So(resp.Code, convey.ShouldEqual, http.StatusOK)
-		convey.So(resp.Body.String(), convey.ShouldEqual, "jack")
-	})
+		if resp.Code != c.code || resp.Body.String() != c.body {
+			t.Errorf("%s %s Failed: %d => %d %s => %s", c.code, resp.Code, c.body, resp.Body.String())
+		}
+	}
 }

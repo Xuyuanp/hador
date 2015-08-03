@@ -24,6 +24,18 @@ func newSimpleHandler(content string) Handler {
 	})
 }
 
+func newParamHandler(name, def string) Handler {
+	return HandlerFunc(func(ctx *Context) {
+		ctx.WriteString(ctx.Params().GetStringMust(name, def))
+	})
+}
+
+func echoHandler(ctx *Context) {
+	ctx.WriteString(ctx.Request.RequestURI)
+}
+
+func emptyHandler(*Context) {}
+
 func newMiddleware(name string) Middleware {
 	return func(next Handler) Handler {
 		return HandlerFunc(func(ctx *Context) {
