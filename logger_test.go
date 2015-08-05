@@ -18,22 +18,19 @@ package hador
 
 import (
 	"bytes"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Xuyuanp/logo"
 	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestLogger(t *testing.T) {
 	convey.Convey("Given a new Hodor h", t, func() {
 		h := New()
-		buf := make([]byte, 4096*4)
-		buffer := bytes.NewBuffer(buf)
-		logger := &logger{
-			Logger: log.New(buffer, "[Hodor] ", 0),
-		}
+		var buffer bytes.Buffer
+		logger := logo.New(logo.LevelDebug, &buffer, "", 0)
 		convey.Convey("Should log messages", func() {
 			h.Before(NewLogFilter(logger))
 			h.Get("/500", HandlerFunc(func(ctx *Context) {

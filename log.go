@@ -17,9 +17,9 @@
 package hador
 
 import (
-	"fmt"
-	"log"
 	"os"
+
+	"github.com/Xuyuanp/logo"
 )
 
 // Logger interface
@@ -31,40 +31,8 @@ type Logger interface {
 	Critical(string, ...interface{})
 }
 
-type logger struct {
-	*log.Logger
-}
-
-var defaultLogger = &logger{
-	Logger: log.New(os.Stdout, "[Hodor] ", log.LstdFlags|log.Lshortfile),
-}
-
-func (l *logger) Debug(format string, v ...interface{}) {
-	msg := fmt.Sprintf(format, v...)
-	msg = fmt.Sprintf("\033[34m%s\033[0m", msg)
-	l.Output(2, msg)
-}
-
-func (l *logger) Info(format string, v ...interface{}) {
-	msg := fmt.Sprintf(format, v...)
-	msg = fmt.Sprintf("\033[32m%s\033[0m", msg)
-	l.Output(2, msg)
-}
-
-func (l *logger) Warning(format string, v ...interface{}) {
-	msg := fmt.Sprintf(format, v...)
-	msg = fmt.Sprintf("\033[36m%s\033[0m", msg)
-	l.Output(2, msg)
-}
-
-func (l *logger) Error(format string, v ...interface{}) {
-	msg := fmt.Sprintf(format, v...)
-	msg = fmt.Sprintf("\033[33m%s\033[0m", msg)
-	l.Output(2, msg)
-}
-
-func (l *logger) Critical(format string, v ...interface{}) {
-	msg := fmt.Sprintf(format, v...)
-	msg = fmt.Sprintf("\033[31m%s\033[0m", msg)
-	l.Output(2, msg)
-}
+var defaultLogger Logger = logo.New(
+	logo.LevelDebug,
+	os.Stdout,
+	"[Hodor] ",
+	logo.Ldate|logo.Ltime|logo.Lcolor)

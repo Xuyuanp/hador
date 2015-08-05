@@ -18,22 +18,19 @@ package hador
 
 import (
 	"bytes"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Xuyuanp/logo"
 	"github.com/smartystreets/goconvey/convey"
 )
 
 func TestRecovery(t *testing.T) {
 	convey.Convey("Given a new Hodor h", t, func() {
 		h := New()
-		buf := make([]byte, 4096)
-		writer := bytes.NewBuffer(buf)
-		logger := &logger{
-			Logger: log.New(writer, "", 0),
-		}
+		var writer bytes.Buffer
+		logger := logo.New(logo.LevelDebug, &writer, "", 0)
 		h.Before(NewRecoveryFilter(logger))
 		h.Get("/panic", HandlerFunc(func(ctx *Context) {
 			panic("some error")
