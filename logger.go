@@ -35,7 +35,7 @@ func NewLogFilter(logger Logger) FilterFunc {
 		}
 		path := req.URL.Path
 		if req.URL.RawQuery != "" {
-			path += req.URL.RawQuery
+			path += "?" + req.URL.RawQuery
 		}
 		logger.Info("Started %s %s %s", req.Method, path, addr)
 
