@@ -178,6 +178,11 @@ func (ctx *Context) WriteString(s string) (n int, err error) {
 	return io.WriteString(ctx.Response, s)
 }
 
+const (
+	contentTypeJSON = "application/json; charset=utf-8"
+	contentTypeXML  = "application/xml; charset=utf-8"
+)
+
 // RenderJSON renders v in JSON format and sets status if provided.
 func (ctx *Context) RenderJSON(v interface{}, status ...int) error {
 	return ctx.renderJSON(v, false, status...)
@@ -189,8 +194,7 @@ func (ctx *Context) RenderPrettyJSON(v interface{}, status ...int) error {
 }
 
 func (ctx *Context) renderJSON(v interface{}, indent bool, status ...int) error {
-	ctype := "application/json; charset=utf-8"
-	return ctx.render(v, jsonMarshaler(indent), ctype, status...)
+	return ctx.render(v, jsonMarshaler(indent), contentTypeJSON, status...)
 }
 
 // RenderXML renders v in XML format and sets status if provided.
@@ -204,8 +208,7 @@ func (ctx *Context) RenderPrettyXML(v interface{}, status ...int) error {
 }
 
 func (ctx *Context) renderXML(v interface{}, indent bool, status ...int) error {
-	ctype := "application/xml; charset=utf-8"
-	return ctx.render(v, xmlMarshaler(indent), ctype, status...)
+	return ctx.render(v, xmlMarshaler(indent), contentTypeXML, status...)
 }
 
 type marshaler func(interface{}) ([]byte, error)
