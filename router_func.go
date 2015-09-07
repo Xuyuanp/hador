@@ -1,5 +1,7 @@
 package hador
 
+var _ Router = RouterFunc(nil)
+
 // RouterFunc is a function type implemented Router interface.
 type RouterFunc func(method Method, pattern string, handler interface{}, filters ...Filter) *Leaf
 
