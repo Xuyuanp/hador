@@ -235,6 +235,7 @@ func (ctx *Context) render(v interface{}, m marshaler, ctype string, status ...i
 	}
 
 	ctx.SetHeader("Content-Type", ctype)
+	ctx.SetHeader("Content-Length", fmt.Sprintf("%d", len(data)))
 	_, err = ctx.WriteStatus(data, status...)
 	return err
 }
