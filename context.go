@@ -148,6 +148,24 @@ func (ctx *Context) Delete(key string) interface{} {
 	return nil
 }
 
+// Redirect request.
+func (ctx *Context) Redirect(url string, status int) {
+	http.Redirect(ctx.Response, ctx.Request, url, status)
+}
+
+// RenderJSONP method.
+func (ctx *Context) RenderJSONP(v interface{}, callback string, status int) error {
+	d, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	data := fmt.Sprintf("%s(%s);", callback, string(d))
+	ctx.WriteHeader(status)
+	ctx.SetHeader("Content-Type", "application/javascript")
+	_, err = ctx.WriteString(data)
+	return err
+}
+
 // SetHeader calls ctx.Response.Header().Set method
 func (ctx *Context) SetHeader(key, value string) {
 	ctx.Response.Header().Set(key, value)
