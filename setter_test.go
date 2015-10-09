@@ -40,7 +40,7 @@ func TestSetter(t *testing.T) {
 	h := New()
 
 	for _, c := range cases {
-		h.Setter().Method(c.method).Pattern(c.pattern).Handler(c.handler)
+		h.Route().Method(c.method).Pattern(c.pattern).Handler(c.handler)
 	}
 
 	for _, c := range cases {

@@ -34,7 +34,7 @@ func TestHandler(t *testing.T) {
 			parseHandler(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {}))
 			func() {
 				defer func() {
-					convey.So(recover(), convey.ShouldEqual, "invalid handler")
+					convey.So(recover(), convey.ShouldBeNil)
 				}()
 				parseHandler(1)
 			}()
