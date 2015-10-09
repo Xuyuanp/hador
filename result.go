@@ -17,7 +17,10 @@
 
 package hador
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 // OK default handler
 func OK(msg string) Handler {
@@ -30,5 +33,26 @@ func OK(msg string) Handler {
 func Status(status int) Handler {
 	return HandlerFunc(func(ctx *Context) {
 		ctx.WriteHeader(status)
+	})
+}
+
+// JSON handler
+func JSON(v interface{}) Handler {
+	return HandlerFunc(func(ctx *Context) {
+		ctx.RenderJSON(v)
+	})
+}
+
+// XML handler
+func XML(v interface{}) Handler {
+	return HandlerFunc(func(ctx *Context) {
+		ctx.RenderXML(v)
+	})
+}
+
+// Data handler
+func Data(v interface{}) Handler {
+	return HandlerFunc(func(ctx *Context) {
+		ctx.WriteString(fmt.Sprintf("%v", v))
 	})
 }

@@ -58,6 +58,9 @@ func parseHandler(h interface{}) Handler {
 		return OK(v)
 	case int:
 		return Status(v)
+	case int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return Status(v.(int))
+	default:
+		return Data(v)
 	}
-	panic("invalid handler")
 }
