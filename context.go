@@ -192,7 +192,10 @@ func (ctx *Context) WriteStatus(p []byte, status ...int) (n int, err error) {
 }
 
 // WriteString writes string into response by calling ctx.Write method.
-func (ctx *Context) WriteString(s string) (n int, err error) {
+func (ctx *Context) WriteString(s string, status ...int) (n int, err error) {
+	if status != nil && len(status) > 0 {
+		ctx.WriteHeader(status[0])
+	}
 	return io.WriteString(ctx.Response, s)
 }
 
