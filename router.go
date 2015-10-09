@@ -52,7 +52,7 @@ func (m Method) String() string {
 
 // Router interface
 type Router interface {
-	Setter() MethodSetter
+	Route() MethodSetter
 
 	Options(pattern string, h interface{}, filters ...Filter) *Leaf
 	Get(pattern string, h interface{}, filters ...Filter) *Leaf

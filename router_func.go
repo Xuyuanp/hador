@@ -64,8 +64,8 @@ func (r RouterFunc) Any(pattern string, handler interface{}, filters ...Filter) 
 	return nil
 }
 
-// Setter returns a setter-chain to add a new route step-by-step.
-func (r RouterFunc) Setter() MethodSetter {
+// Route returns a setter-chain to add a new route step-by-step.
+func (r RouterFunc) Route() MethodSetter {
 	return func(method Method) PatternSetter {
 		return func(pattern string) HandlerSetter {
 			return func(handler interface{}, filters ...Filter) *Leaf {
