@@ -16,11 +16,7 @@
 
 package hador
 
-import (
-	"os"
-
-	"github.com/Xuyuanp/logo"
-)
+import "github.com/Xuyuanp/logo"
 
 // Logger interface
 type Logger interface {
@@ -31,8 +27,7 @@ type Logger interface {
 	Critical(string, ...interface{})
 }
 
-var defaultLogger Logger = logo.New(
+var defaultLogger Logger = logo.NewStd(
 	logo.LevelDebug,
-	os.Stdout,
 	"[Hodor] ",
 	logo.Ldate|logo.Ltime|logo.Lcolor)
