@@ -21,6 +21,7 @@ import (
 	"container/list"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -75,10 +76,26 @@ func (h *Hador) Run(addr string) error {
 	return http.ListenAndServe(addr, h)
 }
 
+// RunExitOnError starts serving HTTP request and exit app if any error occurs.
+func (h *Hador) RunExitOnError(addr string) {
+	if err := h.Run(addr); err != nil {
+		h.Logger.Critical("Run failed: %s", err)
+		os.Exit(1)
+	}
+}
+
 // RunTLS starts serving HTTPS request.
 func (h *Hador) RunTLS(addr, sertFile, keyFile string) error {
 	h.Logger.Info("Listening on %s", addr)
 	return http.ListenAndServeTLS(addr, sertFile, keyFile, h)
+}
+
+// RunTLSExitOnError starts serving HTTPS request and exit app if any error occurs.
+func (h *Hador) RunTLSExitOnError(addr, sertFile, keyFile string) {
+	if err := h.RunTLS(addr, sertFile, keyFile); err == nil {
+		h.Logger.Critical("RunTLS failed: %s", err)
+		os.Exit(1)
+	}
 }
 
 func (h *Hador) ServeHTTP(w http.ResponseWriter, req *http.Request) {
