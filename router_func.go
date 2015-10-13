@@ -13,47 +13,47 @@ func (r RouterFunc) AddRoute(method Method, pattern string, handler interface{},
 
 // Get adds a new route binded with GET method.
 func (r RouterFunc) Get(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(GET, pattern, handler, filters...)
+	return r.Route().Get().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Post adds a new route binded with POST method.
 func (r RouterFunc) Post(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(POST, pattern, handler, filters...)
+	return r.Route().Post().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Put adds a new route binded with PUT method.
 func (r RouterFunc) Put(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(PUT, pattern, handler, filters...)
+	return r.Route().Put().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Delete adds a new route binded with DELETE method.
 func (r RouterFunc) Delete(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(DELETE, pattern, handler, filters...)
+	return r.Route().Delete().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Patch adds a new route binded with Patch method.
 func (r RouterFunc) Patch(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(PATCH, pattern, handler, filters...)
+	return r.Route().Patch().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Trace adds a new route binded with TRACE method.
 func (r RouterFunc) Trace(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(TRACE, pattern, handler, filters...)
+	return r.Route().Trace().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Connect adds a new route binded with CONNECT method.
 func (r RouterFunc) Connect(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(CONNECT, pattern, handler, filters...)
+	return r.Route().Connect().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Options adds a new route binded with OPTIONS method.
 func (r RouterFunc) Options(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(OPTIONS, pattern, handler, filters...)
+	return r.Route().Options().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Head adds a new route binded with HEAD method.
 func (r RouterFunc) Head(pattern string, handler interface{}, filters ...Filter) *Leaf {
-	return r.AddRoute(HEAD, pattern, handler, filters...)
+	return r.Route().Head().Pattern(pattern).Handler(handler).AddFilters(filters...)
 }
 
 // Any adds a new route binded with all method.
