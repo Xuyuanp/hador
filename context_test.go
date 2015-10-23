@@ -135,7 +135,7 @@ func TestContext(t *testing.T) {
 				convey.So(resp.Code, convey.ShouldEqual, 201)
 				convey.So(resp.Header().Get("Content-Type"), convey.ShouldEqual,
 					"application/json; charset=utf-8")
-				convey.So(resp.Body.String(), convey.ShouldEqual, string(jsondata))
+				convey.So(resp.Body.String(), convey.ShouldEqual, string(jsondata)+"\n")
 			})
 			convey.Convey("test RenderPrettyJSON", func() {
 				resp := httptest.NewRecorder()

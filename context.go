@@ -206,59 +206,41 @@ const (
 
 // RenderJSON renders v in JSON format and sets status if provided.
 func (ctx *Context) RenderJSON(v interface{}, status ...int) error {
-	return ctx.renderJSON(v, false, status...)
+	if len(status) > 0 {
+		ctx.WriteHeader(status[0])
+	}
+	ctx.SetHeader("Content-Type", contentTypeJSON)
+	return json.NewEncoder(ctx.Response).Encode(v)
 }
 
 // RenderPrettyJSON renders v in pretty JSON format and sets status if provided.
 func (ctx *Context) RenderPrettyJSON(v interface{}, status ...int) error {
-	return ctx.renderJSON(v, true, status...)
-}
-
-func (ctx *Context) renderJSON(v interface{}, indent bool, status ...int) error {
-	return ctx.render(v, jsonMarshaler(indent), contentTypeJSON, status...)
+	data, err := json.MarshalIndent(v, "", "\t")
+	if err != nil {
+		return err
+	}
+	ctx.SetHeader("Content-Type", contentTypeJSON)
+	ctx.SetHeader("Content-Length", fmt.Sprintf("%d", len(data)))
+	_, err = ctx.WriteStatus(data, status...)
+	return err
 }
 
 // RenderXML renders v in XML format and sets status if provided.
 func (ctx *Context) RenderXML(v interface{}, status ...int) error {
-	return ctx.renderXML(v, false, status...)
+	if len(status) > 0 {
+		ctx.WriteHeader(status[0])
+	}
+	ctx.SetHeader("Content-Type", contentTypeXML)
+	return xml.NewEncoder(ctx.Response).Encode(v)
 }
 
 // RenderPrettyXML renders v in pretty XML format and sets status if provided.
 func (ctx *Context) RenderPrettyXML(v interface{}, status ...int) error {
-	return ctx.renderXML(v, true, status...)
-}
-
-func (ctx *Context) renderXML(v interface{}, indent bool, status ...int) error {
-	return ctx.render(v, xmlMarshaler(indent), contentTypeXML, status...)
-}
-
-type marshaler func(interface{}) ([]byte, error)
-
-func jsonMarshaler(indent bool) marshaler {
-	return func(v interface{}) ([]byte, error) {
-		if indent {
-			return json.MarshalIndent(v, "", "\t")
-		}
-		return json.Marshal(v)
-	}
-}
-
-func xmlMarshaler(indent bool) marshaler {
-	return func(v interface{}) ([]byte, error) {
-		if indent {
-			return xml.MarshalIndent(v, "", "\t")
-		}
-		return xml.Marshal(v)
-	}
-}
-
-func (ctx *Context) render(v interface{}, m marshaler, ctype string, status ...int) error {
-	data, err := m(v)
+	data, err := xml.MarshalIndent(v, "", "\t")
 	if err != nil {
 		return err
 	}
-
-	ctx.SetHeader("Content-Type", ctype)
+	ctx.SetHeader("Content-Type", contentTypeXML)
 	ctx.SetHeader("Content-Length", fmt.Sprintf("%d", len(data)))
 	_, err = ctx.WriteStatus(data, status...)
 	return err
