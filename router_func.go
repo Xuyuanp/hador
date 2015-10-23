@@ -11,6 +11,17 @@ func (r RouterFunc) AddRoute(method Method, pattern string, handler interface{},
 	return r(method, pattern, handler, filters...)
 }
 
+// Route returns a setter-chain to add a new route step-by-step.
+func (r RouterFunc) Route() MethodSetter {
+	return func(method Method) PatternSetter {
+		return func(pattern string) HandlerSetter {
+			return func(handler interface{}, filters ...Filter) *Leaf {
+				return r.AddRoute(method, pattern, handler, filters...)
+			}
+		}
+	}
+}
+
 // Get adds a new route binded with GET method.
 func (r RouterFunc) Get(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	return r.Route().Get().Pattern(pattern).Handler(handler).AddFilters(filters...)
@@ -59,30 +70,21 @@ func (r RouterFunc) Head(pattern string, handler interface{}, filters ...Filter)
 // Any adds a new route binded with all method.
 func (r RouterFunc) Any(pattern string, handler interface{}, filters ...Filter) *Leaf {
 	for _, method := range Methods {
-		r.AddRoute(method, pattern, handler, filters...)
+		r.Route().Method(method).Pattern(pattern).Handler(handler).AddFilters(filters...)
 	}
 	return nil
-}
-
-// Route returns a setter-chain to add a new route step-by-step.
-func (r RouterFunc) Route() MethodSetter {
-	return func(method Method) PatternSetter {
-		return func(pattern string) HandlerSetter {
-			return func(handler interface{}, filters ...Filter) *Leaf {
-				return r.AddRoute(method, pattern, handler, filters...)
-			}
-		}
-	}
 }
 
 // Group adds multi routes one time.
 func (r RouterFunc) Group(pattern string, fn func(Router), filters ...Filter) {
 	fn(RouterFunc(
 		func(method Method, subpattern string, handler interface{}, subfilters ...Filter) *Leaf {
-			return r.AddRoute(method,
-				pattern+subpattern,
-				handler,
-				append(filters, subfilters...)...)
+			return r.Route().
+				Method(method).
+				Pattern(pattern + subpattern).
+				Handler(handler).
+				AddFilters(filters...).
+				AddFilters(subfilters...)
 		}))
 }
 
@@ -93,7 +95,7 @@ func (r RouterFunc) AddController(pattern string, controller ControllerInterface
 	r.Group(pattern, func(sub Router) {
 		for _, method := range Methods {
 			handler := handlerForMethod(controller, method)
-			leaf := sub.AddRoute(method, "/", handler)
+			leaf := sub.Route().Method(method).Pattern("/").Handler(handler)
 			docFn := docMethodForMethod(controller, method)
 			docFn(leaf)
 		}
