@@ -25,6 +25,13 @@ func (hs HandlerSetter) Handler(handler interface{}, filters ...Filter) *Leaf {
 	return hs(handler)
 }
 
+// Filters creates a new HandlerSetter to append filters.
+func (hs HandlerSetter) Filters(filters ...Filter) HandlerSetter {
+	return func(handler interface{}, fs ...Filter) *Leaf {
+		return hs(handler, append(filters, fs...)...)
+	}
+}
+
 // PatternSetter easy way to set Path for a route.
 type PatternSetter func(pattern string) HandlerSetter
 
@@ -84,4 +91,33 @@ func (ms MethodSetter) Connect() PatternSetter {
 // Patch short for Method(PATCH)
 func (ms MethodSetter) Patch() PatternSetter {
 	return ms.Method(PATCH)
+}
+
+// Grouper type is a group routing tool.
+type Grouper func(func(Router), ...Filter)
+
+// For calls Grouper function.
+func (g Grouper) For(fn func(Router)) {
+	g(fn)
+}
+
+// Filters creates a new Grouper appending filters.
+func (g Grouper) Filters(fs ...Filter) Grouper {
+	return func(fn func(Router), filters ...Filter) {
+		g(fn, append(fs, filters...)...)
+	}
+}
+
+// Group creates a new Grouper with root.
+func (ms MethodSetter) Group(root string) Grouper {
+	return func(fn func(Router), fs ...Filter) {
+		fn(RouterFunc(
+			func(method Method, subpattern string, handler interface{}, subfilters ...Filter) *Leaf {
+				return ms.Method(method).
+					Pattern(root + subpattern).
+					Filters(fs...).
+					Filters(subfilters...).
+					Handler(handler)
+			}))
+	}
 }
